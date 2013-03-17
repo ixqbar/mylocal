@@ -49,8 +49,9 @@ public class MessageClient {
 //				.build();
 //        
 //        client.write(chatWorldMessage.toByteArray());
-        
-        client.write("test");
+
+        String message = "test";
+        client.write(message.getBytes());
         
         // Wait until the connection is closed or the connection attempt fails.
         future.getChannel().getCloseFuture().awaitUninterruptibly();
