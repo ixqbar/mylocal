@@ -17,7 +17,7 @@ class ChatMessage(object):
 
     def __init__(self, maxconns=10000):
         """客户端连接消息处理"""
-        self.login_key = "brEakgAMe"
+        self.login_key = ""
         self.logging   = logging
         self.maxconns  = maxconns
         self.conns     = dict()
