@@ -3,6 +3,7 @@
 
 from gevent import monkey;monkey.patch_all()
 import os
+import sys
 import time
 import optparse
 import logging
@@ -33,4 +34,4 @@ if __name__ == "__main__":
         logging.error(traceback.format_exc())
 
     logging.info("chat server run stop")
-    exit(0)
+    sys.exit(0)
