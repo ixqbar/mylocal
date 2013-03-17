@@ -98,8 +98,7 @@ class ChatMessage(object):
         """读数据"""
         self.logging.info("client connected at %s" % (client_socket))
         client_socket_fd = client_socket.fileno()
-        login_client_fd  = client_socket.fileno()
-        self.conns[login_client_fd] = {"socket" : client_socket, "time" : time.time(), "uid" : ""}
+        self.conns[client_socket_fd] = {"socket" : client_socket, "time" : time.time(), "uid" : ""}
 
         head_len         = 6
         to_read_len      = head_len
