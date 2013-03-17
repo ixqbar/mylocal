@@ -4,9 +4,90 @@ if (!is_resource($sock)) {
     die('socket_create for error: '. socket_strerror(socket_last_error()) . PHP_EOL);
 }
 socket_set_option($sock, SOL_SOCKET, SO_REUSEADDR, 1);
-socket_bind($sock,'0.0.0.0',10086);
+socket_bind($sock,'0.0.0.0',9090);
 socket_listen($sock,10);
 
+/**
+ * @param $client_sock
+ * @return array
+ */
+function read_client_msg($client_sock, $buf_len=6, $is_header=True) {
+    $total_len = $buf_len;
+    $buf       = "";
+    while (true) {
+        $tmp_buf = socket_read($client_sock, $buf_len, PHP_BINARY_READ);
+        if (false === $tmp_buf) {
+            return array(1, socket_strerror(socket_last_error()));
+        }
+        if (0 == strlen($tmp_buf)) {
+            break;
+        }
+        if ($is_header && !is_numeric($tmp_buf)) {
+            return array(1, "buf header must be numeric");
+        }
+        $buf_len -= strlen($tmp_buf);
+        $buf     .= $tmp_buf;
+        if (0 == $buf_len) {
+            break;
+        }
+    }
+    
+    if ($buf_len != 0 || strlen($buf) != $total_len) {        
+        return array(1, "error buf `" . $buf . "`");
+    }
+
+    if (false == $is_header) {
+        if (substr($buf, -2) != "|>") {
+            return array(1, "error body buf end flag `" . $body_buf . "`");
+        }
+        $cli_request_msg = json_decode(substr($buf, 0, -2), true);
+        if (!is_array($cli_request_msg)
+            || !isset($cli_request_msg['cli'])
+            || !isset($cli_request_msg['msg'])) {
+            return array(1, "error body buf format `" . $buf . "`");
+        }
+
+        return array(0, $cli_request_msg);
+    }
+    
+    return read_client_msg($client_sock, (int)$buf + 2, false);
+}
+
+/**
+ * @param object $client_sock
+ * @param array $msg
+ */
+function write_client_msg($client_sock, $msg) {
+    $msg      = is_array($msg) ? json_encode($msg) : $msg;
+    $msg      = str_pad(strlen($msg), 6, 0, STR_PAD_LEFT) . $msg . "|>";
+    $body_len = strlen($msg);
+    $start    = 0;
+    $len      = $body_len;
+
+    while (true) {
+        $tmp_len = socket_write($client_sock, substr($msg, $start), $len);
+        if (false === $tmp_len) {
+            return array(1, socket_strerror(socket_last_error()));
+        }
+        
+        if ($tmp_len == $len) {
+            break;
+        }    
+        
+        $start += $tmp_len;
+        $len    = $body_len - $start;
+    }
+
+    return array(0, "");
+}
+
+/**
+ * @param array $msg array("cli" => "", "msg" => "")
+ * @return array
+ */
+function process_client_msg($msg) {
+    return array(0, array("cli" => $msg['cli'], "msg" => "PHP result to other client"));
+}
 
 for ($i = 0; $i < 10; $i++) {
 
@@ -23,11 +104,32 @@ child:
         echo "socket_accept for error:" . socket_strerror(socket_last_error()) . PHP_EOL;
         exit;
     }
-
-    while(true) {
-        //todo
+    
+    if (socket_getpeername($client_sock, $addr, $port)) {
+        echo "connect at:" . $addr . ":" . $port . PHP_EOL;
     }
 
+    while(true) {
+        try {
+            $client_msg = read_client_msg($client_sock);
+            print_r($client_msg);
+            if (0 == $client_msg[0]) {
+                try {
+                   $client_msg = process_client_msg($client_msg[1]);
+                   $result = write_client_msg($client_sock, json_encode($client_msg));
+                   print_r($result);
+                } catch (Exception $e) {
+                    write_client_msg($client_sock, json_encode(array(0, "exception " . $e->getMessage() . " in " . $e->getFile() . ",at " . $e->getLine())));
+                }
+            } else {
+                break;
+            }
+        }catch (Exception $e) {
+            echo "exception " . $e->getMessage() . " in " . $e->getFile() . ",at " . $e->getLine() . PHP_EOL;
+        }
+    }
+
+    socket_close($client_sock);
     exit;
 }
 

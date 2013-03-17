@@ -11,7 +11,7 @@ import traceback
 import cppsserver
 
 logging.basicConfig(
-    level   = logging.INFO,
+    level   = logging.DEBUG,
     datefmt = "%Y-%m-%d %H:%M:%S",
     format  = "[%(asctime)s]%(levelname)8s-%(filename)15s-%(funcName)30s-%(lineno)5s:%(message)s"
 )
@@ -39,7 +39,7 @@ if __name__ == "__main__":
         server.connect_php_server((opt.php_host,opt.php_port))
         server.run()
     except:
-        logging.error(traceback.format_exc())
+        logging.error(sys.exc_info())
 
     logging.info("chat server run stop")
     sys.exit(0)
