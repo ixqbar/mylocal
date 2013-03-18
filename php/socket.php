@@ -33,12 +33,12 @@ function read_client_msg($client_sock, $buf_len=6, $is_header=True) {
     }
     
     if ($buf_len != 0 || strlen($buf) != $total_len) {        
-        return array(1, "error buf `" . $buf . "`");
+        return strlen($buf) ? array(1, "error buf `" . $buf . "`") : array(1, "client disconnected");
     }
 
     if (false == $is_header) {
         if (substr($buf, -2) != "|>") {
-            return array(1, "error body buf end flag `" . $body_buf . "`");
+            return array(1, "error body buf end flag `" . $buf . "`");
         }
         $cli_request_msg = json_decode(substr($buf, 0, -2), true);
         if (!is_array($cli_request_msg)
