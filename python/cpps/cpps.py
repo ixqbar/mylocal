@@ -7,7 +7,6 @@ import sys
 import time
 import optparse
 import logging
-import traceback
 import cppsserver
 
 logging.basicConfig(
