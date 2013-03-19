@@ -12,7 +12,7 @@ import cppsutil
 
 class CppsClient(object):
 
-    def __init__(self, msg_queue, max_conns=10000):
+    def __init__(self, msg_queue):
         """客户端连接消息处理"""
         self.msg_queue = msg_queue
         self.cli_conns = dict()
@@ -20,13 +20,13 @@ class CppsClient(object):
     def close(self):
         pass
 
-    def check_connect_timeout(self, timeout=60):
+    def check_cli_timeout(self, timeout=60):
         pass
 
-    def cli_request_msg_to_php(self, msg):
+    def cli_to_php(self, msg):
         self.msg_queue.put_nowait(msg)
 
-    def php_response_msg_to_cli(self, msg):
+    def php_to_cli(self, msg):
         result = (1, "error php response to cli")
         if isinstance(msg ,str):
             msg = json.loads(msg.decode("utf-8"))
@@ -48,4 +48,4 @@ class CppsClient(object):
         logging.info('new connection from %s:%s,fd=%s' % (address[0], address[1], client_sock_fd,))
         self.cli_conns[client_sock_fd] = {"sock" : client_sock, "time" : time.time(), "uid" : ""}
 
-        self.cli_request_msg_to_php({'cli' : client_sock_fd, "msg" : "hi,I'am a tester"})
+        self.cli_to_php({'cli' : client_sock_fd, "msg" : "hi,I'am a tester"})
