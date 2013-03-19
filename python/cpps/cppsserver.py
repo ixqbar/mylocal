@@ -13,8 +13,8 @@ import inspect
 class CppsTaskServer(object):
     """PhpServer"""
 
-    def __init__(self, symbol, address, msg_queue, cli_conns):
-        self.symbol    = symbol
+    def __init__(self, task_name, address, msg_queue, cli_conns):
+        self.task_name = task_name
         self.address   = address
         self.msg_queue = msg_queue
         self.cli_conns = cli_conns
@@ -49,22 +49,22 @@ class CppsTaskServer(object):
             logging.error("write buf `%s` to php server failure `%s`", req_msg, rep_msg)
 
     def run(self):
-        while self.connect():
+        while True:
             try:
                 task = self.msg_queue.get()
                 if task:
                     if self.connect():
                         logging.info("process php task `%s`", task)
                         self.process(task)
+                        gevent.sleep(0)
                     else:
                         self.msg_queue.put_nowait(task)
-                        logging.error("can't connect php server,task `%s` put to queue", task)
+                        logging.error("can't connect php server task `%s` put to queue", task)
+                        gevent.sleep(10)
+                else:
+                    logging.error("empty task item from queue")
             except:
-                logging.error("dequeue error `%s`", inspect.stack())
-            finally:
-                gevent.sleep(0)
-
-        logging.error("`%s` task server over", self.symbol)
+                logging.error("task server error `%s`", inspect.stack())
 
 
 class CppsRouteServer(StreamServer):
