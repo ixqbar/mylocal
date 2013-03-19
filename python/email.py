@@ -63,7 +63,7 @@ class ServerInfo(object):
 
     def run(self):
         redis_handle    = redis.StrictRedis(host=setting["redis_host"], port=setting["redis_port"], db=setting["redis_db"])
-        medal_rank_list = redis_handle.zrevrangebyscore("player_medal_rank", "+inf", 0, start=0,num=100, withscores=True)
+        medal_rank_list = redis_handle.zrevrangebyscore("player_medal_rank:{0}".format(1 + int(time.strftime("%Y%W"))), "+inf", 0, start=0,num=100, withscores=True)
         content         = []
         position        = 1
         for hc_id,score in medal_rank_list:

@@ -53,21 +53,21 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
      *
      * @param Yaf_Dispatcher $dispatcher
      */
-    protected function _initErrorHandler($dispatcher) {
-        set_error_handler(array('Local_Error', 'errorHandler'));
-        set_exception_handler(array('Local_Error', 'exceptionHandler'));
-        register_shutdown_function(array("Local_Error", 'shutdownHandler'));
-    }
+    public function _initPlugin($dispatcher) {
+		$sample = new SamplePlugin();
+		$dispatcher->registerPlugin($sample);
+	}
 
     /**
      *
      * @param Yaf_Dispatcher $dispatcher
      */
     public function _initRoutes($dispatcher) {
-        $dispatcher->getRouter()->addRoute(
+        $route_handle = $dispatcher->getRouter();
+        $route_handle->addRoute(
             "default",
             new Yaf_Route_Regex(
-                "/index-(\d+)-(\d+).html/",
+                "/index-(\w+)-(\w+).html/",
                 array('controller' => "index"),
                 array(1 => "p1", 2 => "p2")
             )

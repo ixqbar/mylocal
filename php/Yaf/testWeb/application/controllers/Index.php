@@ -7,11 +7,20 @@
  */
 class IndexController extends Yaf_Controller_Abstract {
 
+    /**
+     *
+     */
+    public function init() {
+        //
+    }
+
 	/**
      *
      */
 	public function indexAction() {
         Yaf_Dispatcher::getInstance()->disableView();
         var_dump($this->getRequest()->getParams());
+
+        throw new Exception('ttt');
 	}
 }

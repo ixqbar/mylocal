@@ -6,11 +6,11 @@
  * @author venkman
  */
 class ErrorController extends Yaf_Controller_Abstract {
-
-	//从2.1开始, errorAction支持直接通过参数获取异常
-	public function errorAction($exception) {
-		//1. assign to view engine
+    
+	public function errorAction(Exception $exception) {
+        //如果要在view显示，这句一定要否则其他Controller抛出的错误且使用了disableView时本action无法在view显示
+        Yaf_Dispatcher::getInstance()->enableView();
 		$this->getView()->assign("exception", $exception);
-		//5. render by Yaf 
 	}
+
 }
