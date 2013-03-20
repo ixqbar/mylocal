@@ -11,9 +11,10 @@ import cppsserver
 import inspect
 
 logging.basicConfig(
-    level   = logging.DEBUG,
-    datefmt = "%Y-%m-%d %H:%M:%S",
-    format  = "[%(asctime)s]%(levelname)8s-%(filename)15s-%(funcName)30s-%(lineno)5s:%(message)s"
+    level    = logging.DEBUG,
+    filename = os.path.join(os.getcwd(), "run.log"),
+    datefmt  = "%Y-%m-%d %H:%M:%S",
+    format   = "[%(asctime)s]%(levelname)8s-%(filename)15s-%(funcName)30s-%(lineno)5s:%(message)s"
 )
 
 parser = optparse.OptionParser(description="This is a chat server")
