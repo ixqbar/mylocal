@@ -2,11 +2,12 @@ pack
 包头+数据块+结尾符号
 
 包头为数据块长度，6个字节，不足左则补0
-数据块为json字符
+数据块为action|uid|rid|ext_data
 结尾符号为|>
 
 比如:
-000105A|U|M|xxxxx|>
+000xxxA|uid|rid|ext_data|>
+
 
 cli -> cpps <-> php
 
@@ -22,7 +23,6 @@ A=login登录
 ===响应===
 {
   "id"   : "响应编号"
-  "uid"  : "用户编号",
   "data" : {"err_id":""}
 }
 
