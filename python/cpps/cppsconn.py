@@ -213,9 +213,9 @@ class CppsConn(object):
 
     def service(self, cli_sock, uid, rid, data):
         result = (True, "")
-        cli_fd = cli_sock.fileno()
-        no_response_msg = self.clients.get_no_response_msg(uid, rid)
-        if self.clients.is_reconnect(uid):            
+        cli_fd = cli_sock.fileno()        
+        if self.clients.is_reconnect(uid):
+            no_response_msg = self.clients.get_no_response_msg(uid, rid)
             if no_response_msg:
                 result = self.ser_to_cli(cli_sock, uid, json.dumps(no_response_msg))
                 if not result[0]:
