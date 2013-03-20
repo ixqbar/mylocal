@@ -69,19 +69,18 @@ class CppsConn(object):
             msg = json.loads(msg.decode("utf-8"), "utf-8")
 
         logging.info("php response msg to cli `%s`", msg)
-        if isinstance(msg, list) and 0 == msg[0]:
+        if isinstance(msg, list) and 2 == len(msg) \
+            and 0 == msg[0] and "cli" in msg[1] \
+            and "rid" in msg[1] and "uid" in msg[1] and "data" in msg[1]:
+            response_msg = {
+                'id'   : msg[1]['rid'],
+                'data' : msg[1]['data']
+            }
             if msg[1]['cli'] in self.cli_conns and self.cli_conns[msg[1]['cli']]['uid'] == msg[1]['uid']:
                 lock = self.get_lock(msg[1]['uid'])
                 lock.acquire()
-                try:
-                    response_msg = {
-                        'id'   : msg[1]['rid'],
-                        'data' : msg[1]['data']
-                    }
-                    result = cppsutil.write_sock_buf(self.cli_conns[msg[1]['cli']]['sock'], json.dumps(response_msg))
-                    if not result[0]:
-                        self.clients.add_no_response_msg(msg[1]['uid'], msg[1]['rid'], response_msg)
-                    logging.info("php response to %s msg `%s` result %s", self.cli_conns[msg[1]['cli']]['sock'], msg[1]['msg'], result)
+                try:                    
+                    result = cppsutil.write_sock_buf(self.cli_conns[msg[1]['cli']]['sock'], json.dumps(response_msg))                    
                 except:
                     result = (False,inspect.trace())
                     logging.error(inspect.trace())
@@ -89,6 +88,10 @@ class CppsConn(object):
                     lock.release()
             else:
                 logging.error("client not exists for `%s`", msg)
+                    
+            if not result[0]:
+                logging.error("php write buf `%s` to cli `%s` failue `%s`", msg, self.cli_cons[msg[1]['cli']] if msg[1]['cli'] in self.cli_conns else None)
+                self.clients.add_no_response_msg(msg[1]['uid'], msg[1]['rid'], response_msg)
         else:
             logging.error("php response error `%s`", msg)
             result = (False,"error msg format `{0}`".format(msg))
