@@ -82,7 +82,7 @@ function write_client_msg($client_sock, $msg) {
 }
 
 /**
- * @param array $msg array("cli" => "", "msg" => "")
+ * @param array $msg array("cli" => "", "uid" => "", "rid" => "", "data" => array())
  * @return array
  */
 function process_client_msg($msg) {
