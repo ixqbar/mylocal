@@ -8,6 +8,7 @@ import time
 import optparse
 import logging
 import cppsserver
+import inspect
 
 logging.basicConfig(
     level   = logging.DEBUG,
@@ -32,11 +33,11 @@ if __name__ == "__main__":
     try:
         os.environ["TZ"] = opt.timezone
         time.tzset()
-        server = cppsserver.CppsRouteServer(("0.0.0.0", opt.port), opt.timeout)
+        server = cppsserver.CppsServer(("0.0.0.0", opt.port), opt.timeout)
         server.connect_php_server((opt.php_host,opt.php_port))
         server.run()
     except:
-        logging.error(sys.exc_info())
+        logging.error(inspect.trace())
 
     logging.info("chat server run stop")
     sys.exit(0)

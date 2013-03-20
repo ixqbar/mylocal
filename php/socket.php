@@ -43,7 +43,7 @@ function read_client_msg($client_sock, $buf_len=6, $is_header=True) {
         $cli_request_msg = json_decode(substr($buf, 0, -2), true);
         if (!is_array($cli_request_msg)
             || !isset($cli_request_msg['cli'])
-            || !isset($cli_request_msg['msg'])) {
+            || !isset($cli_request_msg['data'])) {
             return array(1, "error body buf format `" . $buf . "`");
         }
 
@@ -86,7 +86,7 @@ function write_client_msg($client_sock, $msg) {
  * @return array
  */
 function process_client_msg($msg) {
-    return array(0, array("cli" => $msg['cli'], "msg" => "PHP result to other client"));
+    return array(0, array("cli" => $msg['cli'],"uid" => $msg['uid'],"rid" => $msg['rid'],"data" => "PHP result to other client"));
 }
 
 for ($i = 0; $i < 10; $i++) {
@@ -116,6 +116,7 @@ child:
             if (0 == $client_msg[0]) {
                 try {
                    $client_msg = process_client_msg($client_msg[1]);
+                   print_r($client_msg);
                    $result = write_client_msg($client_sock, json_encode($client_msg));
                    print_r($result);
                 } catch (Exception $e) {

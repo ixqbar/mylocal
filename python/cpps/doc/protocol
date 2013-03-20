@@ -1,0 +1,49 @@
+pack
+包头+数据块+结尾符号
+
+包头为数据块长度，6个字节，不足左则补0
+数据块为json字符
+结尾符号为|>
+
+比如:
+000105A|U|M|xxxxx|>
+
+cli -> cpps <-> php
+
+A=login登录
+===请求===
+{
+    "uid"       : "用户编号",
+    "timestamp" : "时间戳",
+    "reconnect" : 0 or 1,
+    "sign"      : "签名",         #md5(secret_key+uid+timestamp+random)
+    "random"    : "随机码"
+}
+===响应===
+{
+  "id"   : "响应编号"
+  "uid"  : "用户编号",
+  "data" : {"err_id":""}
+}
+
+A=hello心跳
+{
+    "timestamp" : "时间戳",
+}
+===响应===
+{
+  "id"   : "响应编号"
+  "data" : {"err_id":""}
+}
+
+A=service请求
+{
+    "id"      : "请求编号",
+    "uid"     : "用户编号",
+    "service" : [["player.login"],...]
+}
+===响应===
+{
+  "id"   : "响应编号"
+  "data" : {"err_id":"", "results":[{"data":"响应内容"}, {"err_id":""}]}
+}
