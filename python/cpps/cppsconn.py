@@ -4,7 +4,6 @@ import hashlib
 import time
 import gevent
 import logging
-import weakref
 import traceback
 import cppsutil
 import cppsclient
@@ -41,6 +40,7 @@ class CppsConn(object):
             if client_socket_fd in self.cli_conns:
                 del self.cli_conns[client_socket_fd]
         except:
+            logging.error("an error occurred", exc_info=True)
             return (False, traceback.format_exc())
 
         return (True, "")
@@ -90,7 +90,7 @@ class CppsConn(object):
                     self.clients.add_no_response_msg(msg[1]['uid'], msg[1]['rid'], response_msg)
                     logging.info("client `%s` no response msg `%s`", msg[1]['uid'], self.clients.list_no_response_msg(msg[1]['uid']))
             except:
-                logging.error(traceback.format_exc())
+                logging.error("an error occurred", exc_info=True)
             finally:
                 lock.release()
         else:
@@ -110,7 +110,7 @@ class CppsConn(object):
                 self.dis_connect(client_sock)
         except:
             result = (False, traceback.format_exc())
-            logging.error("an error occurred %s" % (traceback.format_exc(),))
+            logging.error("an error occurred", exc_info=True)
             self.dis_connect(client_sock)
 
         return result
@@ -131,7 +131,7 @@ class CppsConn(object):
                     logging.error("handle cli msg failure `%s`", result[1])
                     break;
             except:
-                logging.error(traceback.format_exc())
+                logging.error("an error occurred", exc_info=True)
                 break;
 
         result = self.dis_connect(client_sock)
@@ -153,6 +153,7 @@ class CppsConn(object):
                 result = self.handlers[tmp_msg[0]](cli_sock, tmp_msg[1], tmp_msg[2], tmp_msg[3])
             except:
                 result = (False, traceback.format_exc())
+                logging.error("an error occurred", exc_info=True)
             finally:
                 lock.release()
         else:

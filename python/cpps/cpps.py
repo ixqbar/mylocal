@@ -8,7 +8,6 @@ import time
 import optparse
 import logging
 import cppsserver
-import traceback
 
 logging.basicConfig(
     level    = logging.DEBUG,
@@ -41,7 +40,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         pass
     except:
-        logging.error(traceback.format_exc())
+        logging.error("an error occurred", exc_info=True)
 
     logging.info("chat server run stop")
     sys.exit(0)

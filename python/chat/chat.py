@@ -12,6 +12,7 @@ import chatserver
 logging.basicConfig(
     level    = logging.INFO,
     filename = os.path.join(os.getcwd(), 'run.log'),
+    #stream   = sys.stdout,
     datefmt  = "%Y-%m-%d %H:%M:%S",
     format   = "[%(asctime)s]%(levelname)8s-%(filename)15s-%(funcName)30s-%(lineno)5s:%(message)s"
 )
