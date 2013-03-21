@@ -26,8 +26,8 @@ class TClient(object):
         self.uid          = uid
         self.rid          = 1
         self.cli_sock     = create_connection(address)
-        self.accept_event = core.read_event(self.cli_sock.fileno(), self.do_read)
-        self.accept_event.add()
+        if self.cli_sock:
+            self.accept_event = core.read_event(self.cli_sock.fileno(), self.do_read, persist=True)
 
     def get_login_msg(self):
         timestamp = time.time()
@@ -63,7 +63,7 @@ class TClient(object):
     def run(self):
         #login
         logined = False
-        while True:
+        while self.cli_sock:
             if not logined:
                 msg = self.get_login_msg()
                 logined = True

@@ -31,8 +31,8 @@ function read_client_msg($client_sock, $buf_len=6, $is_header=True) {
             break;
         }
     }
-    
-    if ($buf_len != 0 || strlen($buf) != $total_len) {        
+
+    if ($buf_len != 0 || strlen($buf) != $total_len) {
         return strlen($buf) ? array(1, "error buf `" . $buf . "`") : array(1, "client disconnected");
     }
 
@@ -49,7 +49,7 @@ function read_client_msg($client_sock, $buf_len=6, $is_header=True) {
 
         return array(0, $cli_request_msg);
     }
-    
+
     return read_client_msg($client_sock, (int)$buf + 2, false);
 }
 
@@ -69,11 +69,11 @@ function write_client_msg($client_sock, $msg) {
         if (false === $tmp_len) {
             return array(1, socket_strerror(socket_last_error()));
         }
-        
+
         if ($tmp_len == $len) {
             break;
-        }    
-        
+        }
+
         $start += $tmp_len;
         $len    = $body_len - $start;
     }
@@ -86,7 +86,30 @@ function write_client_msg($client_sock, $msg) {
  * @return array
  */
 function process_client_msg($msg) {
+    sleep(3);
     return array(0, array("cli" => $msg['cli'],"uid" => $msg['uid'],"rid" => $msg['rid'],"data" => "PHP result to other client"));
+}
+
+function to_read($sock, $events, $arg) {
+    try {
+         $client_msg = read_client_msg($sock);
+         print_r($client_msg);
+         if (0 == $client_msg[0]) {
+             try {
+                $client_msg = process_client_msg($client_msg[1]);
+                print_r($client_msg);
+                $result = write_client_msg($sock, json_encode($client_msg));
+                print_r($result);
+             } catch (Exception $e) {
+                 write_client_msg($sock, json_encode(array(0, "exception " . $e->getMessage() . " in " . $e->getFile() . ",at " . $e->getLine())));
+             }
+         } else {
+             event_base_loopexit($arg[1]);
+         }
+     }catch (Exception $e) {
+         echo "exception " . $e->getMessage() . " in " . $e->getFile() . ",at " . $e->getLine() . PHP_EOL;
+         event_base_loopexit($arg[1]);
+     }
 }
 
 for ($i = 0; $i < 10; $i++) {
@@ -104,33 +127,44 @@ child:
         echo "socket_accept for error:" . socket_strerror(socket_last_error()) . PHP_EOL;
         exit;
     }
-    
+
     if (socket_getpeername($client_sock, $addr, $port)) {
         echo "connect at:" . $addr . ":" . $port . PHP_EOL;
     }
 
-    while(true) {
-        try {
-            $client_msg = read_client_msg($client_sock);
-            print_r($client_msg);
-            if (0 == $client_msg[0]) {
-                try {
-                   $client_msg = process_client_msg($client_msg[1]);
-                   print_r($client_msg);
-                   $result = write_client_msg($client_sock, json_encode($client_msg));
-                   print_r($result);
-                } catch (Exception $e) {
-                    write_client_msg($client_sock, json_encode(array(0, "exception " . $e->getMessage() . " in " . $e->getFile() . ",at " . $e->getLine())));
-                }
-            } else {
-                break;
-            }
-        }catch (Exception $e) {
-            echo "exception " . $e->getMessage() . " in " . $e->getFile() . ",at " . $e->getLine() . PHP_EOL;
-        }
-    }
+//    while(true) {
+//        try {
+//            $client_msg = read_client_msg($client_sock);
+//            print_r($client_msg);
+//            if (0 == $client_msg[0]) {
+//                try {
+//                   $client_msg = process_client_msg($client_msg[1]);
+//                   print_r($client_msg);
+//                   $result = write_client_msg($client_sock, json_encode($client_msg));
+//                   print_r($result);
+//                } catch (Exception $e) {
+//                    write_client_msg($client_sock, json_encode(array(0, "exception " . $e->getMessage() . " in " . $e->getFile() . ",at " . $e->getLine())));
+//                }
+//            } else {
+//                break;
+//            }
+//        }catch (Exception $e) {
+//            echo "exception " . $e->getMessage() . " in " . $e->getFile() . ",at " . $e->getLine() . PHP_EOL;
+//        }
+//    }
+//
+//    socket_close($client_sock);
 
-    socket_close($client_sock);
+    $base = event_base_new();
+    $event = event_new();
+    // set event flags
+    event_set($event, $client_sock, EV_READ | EV_PERSIST, "to_read", array($event, $base));
+    // set event base
+    event_base_set($event, $base);
+    // enable event
+    event_add($event);
+    // start event loop
+    event_base_loop($base);
     exit;
 }
 
@@ -148,4 +182,3 @@ while (true) {
     }
     echo "child exit " . $child_pid . " \n";
 }
-
