@@ -16,15 +16,18 @@ from gevent.socket import create_connection
 
 sys.path.append("..")
 import cppsutil
+from gevent import core
 
 
 class TClient(object):
 
     def __init__(self,uid=1,address=("127.0.0.1", 8080)):
-        self.secret_key = ""
-        self.uid        = uid
-        self.rid        = 1
-        self.cli_sock   = create_connection(address)
+        self.secret_key   = ""
+        self.uid          = uid
+        self.rid          = 1
+        self.cli_sock     = create_connection(address)
+        self.accept_event = core.read_event(self.cli_sock.fileno(), self.do_read)
+        self.accept_event.add()
 
     def get_login_msg(self):
         timestamp = time.time()
@@ -50,6 +53,13 @@ class TClient(object):
             }
             return 'hello|' + str(self.uid) + "|" + str(self.rid) + "|" + json.dumps(msg)
 
+    def do_read(self, event, evtype):
+        if not event is self.accept_event:
+            return
+
+        response = cppsutil.read_sock_buf(self.cli_sock);
+        print ("received:", response)
+
     def run(self):
         #login
         logined = False
@@ -59,12 +69,8 @@ class TClient(object):
                 logined = True
             else:
                 msg = self.get_msg()
-            print msg
-            start_time = time.time()
+            print("send:", msg)
             cppsutil.write_sock_buf(self.cli_sock, msg);
-            response = cppsutil.read_sock_buf(self.cli_sock);
-            print time.time() - start_time
-            print response
             self.rid = self.rid + 1
             gevent.sleep(1)
 

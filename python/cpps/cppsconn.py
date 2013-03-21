@@ -2,9 +2,10 @@
 import json
 import hashlib
 import time
-import inspect
 import gevent
 import logging
+import weakref
+import traceback
 import cppsutil
 import cppsclient
 from gevent.coros import Semaphore
@@ -40,7 +41,7 @@ class CppsConn(object):
             if client_socket_fd in self.cli_conns:
                 del self.cli_conns[client_socket_fd]
         except:
-            return (False, inspect.trace())
+            return (False, traceback.format_exc())
 
         return (True, "")
 
@@ -76,22 +77,22 @@ class CppsConn(object):
                 'id'   : msg[1]['rid'],
                 'data' : msg[1]['data']
             }
-            if msg[1]['cli'] in self.cli_conns and self.cli_conns[msg[1]['cli']]['uid'] == msg[1]['uid']:
-                lock = self.get_lock(msg[1]['uid'])
-                lock.acquire()
-                try:                    
-                    result = cppsutil.write_sock_buf(self.cli_conns[msg[1]['cli']]['sock'], json.dumps(response_msg))                    
-                except:
-                    result = (False,inspect.trace())
-                    logging.error(inspect.trace())
-                finally:
-                    lock.release()
-            else:
-                logging.error("client not exists for `%s`", msg)
-                    
-            if not result[0]:
-                logging.error("php write buf `%s` to cli `%s` failue `%s`", msg, self.cli_cons[msg[1]['cli']] if msg[1]['cli'] in self.cli_conns else None)
-                self.clients.add_no_response_msg(msg[1]['uid'], msg[1]['rid'], response_msg)
+            lock = self.get_lock(msg[1]['uid'])
+            lock.acquire()
+            try:
+                if msg[1]['cli'] in self.cli_conns and self.cli_conns[msg[1]['cli']]['uid'] == msg[1]['uid']:
+                    result = cppsutil.write_sock_buf(self.cli_conns[msg[1]['cli']]['sock'], json.dumps(response_msg))
+                else:
+                    result = (False, "client not exists for `{0}`".format(msg))
+
+                if not result[0]:
+                    logging.error("php write buf `%s` to cli `%s` failure", msg, self.cli_cons[msg[1]['cli']] if msg[1]['cli'] in self.cli_conns else None)
+                    self.clients.add_no_response_msg(msg[1]['uid'], msg[1]['rid'], response_msg)
+                    logging.info("client `%s` no response msg `%s`", msg[1]['uid'], self.clients.list_no_response_msg(msg[1]['uid']))
+            except:
+                logging.error(traceback.format_exc())
+            finally:
+                lock.release()
         else:
             logging.error("php response error `%s`", msg)
             result = (False,"error msg format `{0}`".format(msg))
@@ -102,19 +103,15 @@ class CppsConn(object):
         """写数据"""
         result = (True, "")
         logging.info("write response message `%s` to %s" % (message, client_sock))
-        lock = self.get_lock(uid)
-        lock.acquire()
         try:
             result = cppsutil.write_sock_buf(client_sock, message)
             if not result[0]:
                 logging.error("write response message to `%s` failure `%s`", client_sock, result)
                 self.dis_connect(client_sock)
         except:
-            result = (False, inspect.trace())
-            logging.error("an error occurred %s" % (inspect.trace(),))
+            result = (False, traceback.format_exc())
+            logging.error("an error occurred %s" % (traceback.format_exc(),))
             self.dis_connect(client_sock)
-        finally:
-            lock.release()
 
         return result
 
@@ -134,7 +131,7 @@ class CppsConn(object):
                     logging.error("handle cli msg failure `%s`", result[1])
                     break;
             except:
-                logging.error(inspect.trace())
+                logging.error(traceback.format_exc())
                 break;
 
         result = self.dis_connect(client_sock)
@@ -143,17 +140,25 @@ class CppsConn(object):
 
     def process_message(self, cli_sock, msg):
         """消息处理"""
+        result = (True, "")
+
         logging.info("receive message `%s`" % (msg,))
         tmp_msg = msg.split("|", 3)
         if 4 == len(tmp_msg) \
             and tmp_msg[0] in self.handlers \
             and len(tmp_msg[1]) > 0:
+            lock = self.get_lock(tmp_msg[1])
+            lock.acquire()
             try:
-                return self.handlers[tmp_msg[0]](cli_sock, tmp_msg[1], tmp_msg[2], tmp_msg[3])
+                result = self.handlers[tmp_msg[0]](cli_sock, tmp_msg[1], tmp_msg[2], tmp_msg[3])
             except:
-                return (False, inspect.stack())
+                result = (False, traceback.format_exc())
+            finally:
+                lock.release()
         else:
-            return (False, "error message format `{0}`".format(msg))
+            result = (False, "error message format `{0}`".format(msg))
+
+        return result
 
     def login(self, cli_sock, uid, rid, data):
         if isinstance(data, str):
@@ -213,7 +218,7 @@ class CppsConn(object):
 
     def service(self, cli_sock, uid, rid, data):
         result = (True, "")
-        cli_fd = cli_sock.fileno()        
+        cli_fd = cli_sock.fileno()
         if self.clients.is_reconnect(uid):
             no_response_msg = self.clients.get_no_response_msg(uid, rid)
             if no_response_msg:

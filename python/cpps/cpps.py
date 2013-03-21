@@ -8,11 +8,12 @@ import time
 import optparse
 import logging
 import cppsserver
-import inspect
+import traceback
 
 logging.basicConfig(
     level    = logging.DEBUG,
-    filename = os.path.join(os.getcwd(), "run.log"),
+    #filename = os.path.join(os.getcwd(), "run.log"),
+    stream   = sys.stdout,
     datefmt  = "%Y-%m-%d %H:%M:%S",
     format   = "[%(asctime)s]%(levelname)8s-%(filename)15s-%(funcName)30s-%(lineno)5s:%(message)s"
 )
@@ -37,8 +38,10 @@ if __name__ == "__main__":
         server = cppsserver.CppsServer(("0.0.0.0", opt.port), opt.timeout)
         server.connect_php_server((opt.php_host,opt.php_port))
         server.run()
+    except KeyboardInterrupt:
+        pass
     except:
-        logging.error(inspect.trace())
+        logging.error(traceback.format_exc())
 
     logging.info("chat server run stop")
     sys.exit(0)

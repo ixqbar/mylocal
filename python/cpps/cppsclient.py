@@ -22,8 +22,15 @@ class CppsClient(object):
 
     def get_no_response_msg(self, uid, rid):
         uid,rid = cppsutil.to_str(uid, rid)
-        if uid in self.player and rid in self.player[uid]:
-            return self.player[uid].pop(rid)
+        if uid in self.player and rid in self.player[uid]['no_response_msg']:
+            return self.player[uid]['no_response_msg'].pop(rid)
+        else:
+            return None
+
+    def list_no_response_msg(self, uid):
+        uid = cppsutil.to_str(uid)
+        if uid in self.player:
+            return self.player[uid]
         else:
             return None
 

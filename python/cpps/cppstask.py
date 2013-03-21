@@ -4,7 +4,7 @@ from gevent.socket import create_connection
 import logging
 import cppsutil
 import gevent
-import inspect
+import traceback
 
 class CppsTask(object):
     """PhpServer"""
@@ -60,4 +60,4 @@ class CppsTask(object):
                 else:
                     logging.error("empty task item from queue")
             except:
-                logging.error("task server error `%s`", inspect.stack())
+                logging.error("task server error `%s`", traceback.format_exc())
