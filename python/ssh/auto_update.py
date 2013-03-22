@@ -49,7 +49,6 @@ def auto_update(platform):
 
 if __name__ == "__main__":
     try:
-        auto_update("jp_rw")
         if 2 ==len(sys.argv):
             auto_update(sys.argv[1])
         else:
