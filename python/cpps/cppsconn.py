@@ -39,6 +39,7 @@ class CppsConn(object):
             client_socket_fd = client_sock.fileno()
             if client_socket_fd in self.cli_conns:
                 del self.cli_conns[client_socket_fd]
+            client_sock.close()
         except:
             logging.error("an error occurred", exc_info=True)
             return (False, traceback.format_exc())

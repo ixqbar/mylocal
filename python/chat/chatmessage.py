@@ -60,6 +60,7 @@ class ChatMessage(object):
             client_socket_fd = client_socket.fileno()
             if client_socket_fd in self.conns:
                 del self.conns[client_socket_fd]
+            client_socket.close()
         except:
             return False
 
