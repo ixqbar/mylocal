@@ -26,7 +26,10 @@ def read_sock_buf(sock, buf_len=6, is_header=True):
                 logging.error("read socket error `%s`, `%s`" % (err, sock,))
                 break;
 
-        if is_header and (not tmp_buf or not tmp_buf.isdigit()):
+        if 0 == len(tmp_buf):
+            break;
+
+        if is_header and not tmp_buf.isdigit():
             logging.error("can't read header message `%s` `%s`" % (tmp_buf, sock,))
             break;
 

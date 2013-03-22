@@ -125,7 +125,7 @@ class CppsConn(object):
             try:
                 result = cppsutil.read_sock_buf(client_sock)
                 if not result[0]:
-                    logging.error("read sock buf failure `%s`", result)
+                    logging.error(result[1])
                     break;
                 result = self.process_message(client_sock, result[1])
                 if not result[0]:
@@ -135,8 +135,8 @@ class CppsConn(object):
                 logging.error("an error occurred", exc_info=True)
                 break;
 
-        result = self.dis_connect(client_sock)
-        if not result[0] and client_sock_fd in self.cli_conns:
+        if client_sock_fd in self.cli_conns:
+            self.dis_connect(client_sock)
             del self.cli_conns[client_sock_fd]
 
     def process_message(self, cli_sock, msg):

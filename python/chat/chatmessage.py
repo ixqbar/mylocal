@@ -88,7 +88,7 @@ class ChatMessage(object):
             try:
                 err_no,cli_msg = chatutil.read_sock_buf(client_socket)
                 if err_no:
-                    logging.error("read sock buf failure `%s`", cli_msg)
+                    logging.error(cli_msg)
                     break;
                 err_msg,to_close = self.process_message(client_socket, cli_msg)
                 if to_close:
@@ -98,8 +98,8 @@ class ChatMessage(object):
                 logging.error(inspect.stack())
                 break;
 
-        err_no = self.dis_connect(client_socket)
-        if not err_no and client_socket_fd in self.conns:
+        if client_socket_fd in self.conns:
+            self.dis_connect(client_socket)
             del self.conns[client_socket_fd]
 
     def process_message(self, client_socket, message):
