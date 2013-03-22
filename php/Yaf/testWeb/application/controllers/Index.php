@@ -19,8 +19,13 @@ class IndexController extends Yaf_Controller_Abstract {
      */
 	public function indexAction() {
         Yaf_Dispatcher::getInstance()->disableView();
-        var_dump($this->getRequest()->getParams());
 
-        throw new Exception('ttt');
+        if ($this->getRequest()->isCli()) {
+            print_r($this->getRequest()->getParams());
+            print_r($_SERVER);
+        } else {
+            var_dump($this->getRequest()->getParams());
+            var_dump($_SERVER);
+        }
 	}
 }
