@@ -3,9 +3,12 @@
 import logging
 import socket
 import errno
+import time
 
 FATAL_ERROR_NO  = (errno.EBADF, errno.EINVAL, errno.ENOTSOCK)
 IGNORE_ERROR_NO = (errno.EAGAIN, errno.EWOULDBLOCK)
+
+get_format_time = lambda : time.strftime("%Y/%m/%d %H:%M:%S")
 
 def read_sock_buf(sock, buf_len=6, is_header=True):
     buf = ""

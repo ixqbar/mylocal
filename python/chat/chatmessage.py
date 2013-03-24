@@ -25,9 +25,6 @@ class ChatMessage(object):
         }
         self.history   = list()
 
-    def get_format_time(self):
-        return time.strftime("%Y/%m/%d %H:%M:%S")
-
     def check_connect_timeout(self, timeout=60):
         while True:
             if len(self.conns):
@@ -241,7 +238,7 @@ class ChatMessage(object):
                 "first"    : sender_client_player.first_name,
                 "last"     : sender_client_player.last_name,
                 "msg"      : chat_message["msg"],
-                "add_time" : self.get_format_time()
+                "add_time" : chatutil.get_format_time()
             }
             response = json.dumps(response_message)
             logging.info("response chat message to all `%s`" % (response,))
@@ -266,7 +263,7 @@ class ChatMessage(object):
                     "first"    : sender_client_player.first_name,
                     "last"     : sender_client_player.last_name,
                     "msg"      : chat_message["msg"],
-                    "add_time" : self.get_format_time()
+                    "add_time" : chatutil.get_format_time()
                 }
                 response = json.dumps(response_message)
                 logging.info("response chat message to one `%s`, target %s" % (response, self.mapping[target_client_uid],))
