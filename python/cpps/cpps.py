@@ -7,15 +7,16 @@ import sys
 import time
 import optparse
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import cppsserver
 
-logging.basicConfig(
-    level    = logging.DEBUG,
-    #filename = os.path.join(os.getcwd(), "run.log"),
-    stream   = sys.stdout,
-    datefmt  = "%Y-%m-%d %H:%M:%S",
-    format   = "[%(asctime)s]%(levelname)8s-%(filename)15s-%(funcName)30s-%(lineno)5s:%(message)s"
-)
+log_handler = TimedRotatingFileHandler(os.path.join(os.getcwd(), 'run.log'), 'D')
+log_handler.setFormatter(logging.Formatter("[%(asctime)s]%(levelname)8s-%(filename)15s-%(funcName)30s-%(lineno)5s:%(message)s"))
+log_handler.suffix = "-%Y%m%d"
+
+logger = logging.getLogger('')
+logger.addHandler(log_handler)
+logger.setLevel(logging.INFO)
 
 parser = optparse.OptionParser(description="This is a chat server")
 parser.add_option("--port",     dest="port",     action="store", type="int",    help="port")
