@@ -34,7 +34,7 @@ class ChatMessage(object):
                     if conn["time"] <= check_time:
                         self.dis_connect(conn["socket"], "check_connect_timeout")
                 logging.info("check_connect_timeout end total connection %s" % (len(self.conns),))
-            gevent.sleep(10)
+            gevent.sleep(30)
 
     def get_history(self):
         return self.history

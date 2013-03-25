@@ -60,7 +60,7 @@ class CppsConn(object):
                     if conn["time"] <= check_time:
                         self.dis_connect(conn["socket"], "check_connect_timeout")
                 logging.info("check_connect_timeout end total connection %s" % (len(self.cli_conns),))
-            gevent.sleep(10)
+            gevent.sleep(30)
 
     def cli_to_php(self, msg):
         self.msg_queue.put_nowait(msg)
