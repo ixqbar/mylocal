@@ -2,16 +2,14 @@ pack
 包头+数据块+结尾符号
 
 包头为数据块长度，6个字节，不足左则补0
-数据块为action|uid|rid|ext_data
+数据块为action|uid|id|ext_data
 结尾符号为|>
 
-比如:
-000xxxA|uid|rid|ext_data|>
-
+其中action为login,hello,service,uid为用户编号,id为请求编号,ext_data为实际请求数据
 
 cli -> cpps <-> php
 
-A=login登录
+action=login登录
 ===请求===
 {
     "uid"       : "用户编号",
@@ -26,7 +24,7 @@ A=login登录
   "data" : {"err_id":""}
 }
 
-A=hello心跳
+action=hello心跳
 {
     "timestamp" : "时间戳",
 }
@@ -36,7 +34,7 @@ A=hello心跳
   "data" : {"err_id":""}
 }
 
-A=service请求
+action=service请求
 {
     "id"      : "请求编号",
     "uid"     : "用户编号",
