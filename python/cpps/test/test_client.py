@@ -3,10 +3,7 @@
 
 from gevent import monkey;monkey.patch_all()
 import sys
-import os
 import time
-import logging
-import inspect
 import json
 import random
 import hashlib
@@ -77,7 +74,7 @@ class TClient(object):
 
 if __name__ == '__main__':
     try:
-        test = TClient()
+        test = TClient(sys.argv[1] if len(sys.argv) == 2 else (int)(time.time()))
         test.run()
     except:
         print(sys.exc_info())
