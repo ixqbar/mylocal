@@ -59,7 +59,7 @@ class CppsTask(object):
                         logging.info("process php task `%s`", task)
                         result = cppsutil.write_sock_buf(self.php_sock, task)
                         if not result[0]:
-                            logging.error("write buf `%s` to php server failure `%s`", result)
+                            logging.error("write buf `%s` to php server failure `%s`", task, result)
                         gevent.sleep(0)
                     else:
                         self.msg_queue.put_nowait(task)
