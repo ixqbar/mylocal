@@ -5,6 +5,7 @@ import time
 import gevent
 import logging
 import traceback
+import weakref
 import cppsutil
 import cppsclient
 from gevent.coros import Semaphore
@@ -18,6 +19,7 @@ class CppsConn(object):
         self.no_response = dict()
         self.cli_conns   = dict()
         self.lock        = dict()
+        self.rel_mapping = weakref.WeakValueDictionary()
         self.clients     = cppsclient.CppsClient()
         self.handlers    = {
             "login"   : self.login,
@@ -27,8 +29,11 @@ class CppsConn(object):
 
     def get_lock(self, uid):
         uid = cppsutil.to_str(uid)
-        if uid not in self.lock:
-            self.lock[uid] = Semaphore()
+        if len(uid) > 0:
+            if uid not in self.lock:
+                self.lock[uid] = Semaphore()
+        else:
+            return Semaphore()
 
         return self.lock[uid]
 
@@ -221,6 +226,9 @@ class CppsConn(object):
             self.ser_to_cli(cli_sock, uid, json.dumps(response_message))
             return (False, "error login message sign")
 
+        client_player_uid = cppsutil.to_str(uid)
+        if client_player_uid in self.rel_mapping:
+            self.dis_connect(self.rel_mapping[client_player_uid], "relogin")
 
         logging.info("login message `%s` from `%s`", data, cli_sock)
         response_message = {
@@ -228,7 +236,8 @@ class CppsConn(object):
             "data" : {"err_id":""}
         }
         cli_fd = cli_sock.fileno()
-        self.cli_conns[cli_fd]['uid'] = cppsutil.to_str(uid)
+        self.cli_conns[cli_fd]['uid']       = client_player_uid
+        self.rel_mapping[client_player_uid] = cli_sock
         self.clients.login(data);
         self.ser_to_cli(cli_sock, uid, json.dumps(response_message))
 
