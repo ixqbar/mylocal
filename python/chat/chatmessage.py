@@ -97,7 +97,6 @@ class ChatMessage(object):
 
         if client_socket_fd in self.conns:
             self.dis_connect(client_socket)
-            del self.conns[client_socket_fd]
 
     def process_message(self, client_socket, message):
         """todo"""

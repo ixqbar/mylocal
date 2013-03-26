@@ -86,8 +86,7 @@ function write_client_msg($client_sock, $msg) {
  * @return array
  */
 function process_client_msg($msg) {
-    sleep(3);
-    return array(0, array("cli" => $msg['cli'],"uid" => $msg['uid'],"rid" => $msg['rid'],"data" => "PHP result to other client"));
+    return array(0, array("action" => "pull","cli" => $msg['cli'],"uid" => $msg['uid'],"rid" => $msg['rid'],"data" => "PHP result to other client"));
 }
 
 function to_read($sock, $events, $arg) {

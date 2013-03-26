@@ -65,35 +65,71 @@ class CppsConn(object):
     def cli_to_php(self, msg):
         self.msg_queue.put_nowait(msg)
 
+
+    def response_to_cli(self, cli_sock, uid, msg):
+        result = (True, "")
+        if isinstance(msg, dict):
+            msg = json.dumps(msg)
+
+        lock = self.get_lock(uid)
+        lock.acquire()
+        try:
+            result = cppsutil.write_sock_buf(cli_sock, msg)
+        except:
+            result = (False, traceback.format_exc())
+            logging.error("an error occurred", exc_info=True)
+        finally:
+            lock.release()
+
+        return result
+
     def php_to_cli(self, msg):
         result = (True, "")
         if isinstance(msg ,str):
             msg = json.loads(msg.decode("utf-8"), "utf-8")
 
         logging.info("php response msg to cli `%s`", msg)
-        if isinstance(msg, list) and 2 == len(msg) \
-            and 0 == msg[0] and "cli" in msg[1] \
-            and "rid" in msg[1] and "uid" in msg[1] and "data" in msg[1]:
-            response_msg = {
-                'id'   : msg[1]['rid'],
-                'data' : msg[1]['data']
-            }
-            lock = self.get_lock(msg[1]['uid'])
-            lock.acquire()
-            try:
+        if isinstance(msg, list) \
+            and 2 == len(msg) \
+            and 0 == msg[0] \
+            and "action" in msg[1] \
+            and "cli" in msg[1] \
+            and "rid" in msg[1] \
+            and "uid" in msg[1] \
+            and "data" in msg[1]:
+
+            if msg[1]['action'] == "pull":
+                ##请求响应
+                response_msg = {
+                    'id'   : msg[1]['rid'],
+                    'data' : msg[1]['data']
+                }
                 if msg[1]['cli'] in self.cli_conns and self.cli_conns[msg[1]['cli']]['uid'] == msg[1]['uid']:
-                    result = cppsutil.write_sock_buf(self.cli_conns[msg[1]['cli']]['sock'], json.dumps(response_msg))
+                    result = self.response_to_cli(self.cli_conns[msg[1]['cli']]['sock'], msg[1]['uid'], response_msg)
                 else:
                     result = (False, "client not exists for `{0}`".format(msg))
 
                 if not result[0]:
-                    logging.error("php write buf `%s` to cli `%s` failure", msg, self.cli_cons[msg[1]['cli']] if msg[1]['cli'] in self.cli_conns else None)
-                    self.clients.add_no_response_msg(msg[1]['uid'], msg[1]['rid'], response_msg)
-                    logging.info("client `%s` no response msg `%s`", msg[1]['uid'], self.clients.list_no_response_msg(msg[1]['uid']))
-            except:
-                logging.error("an error occurred", exc_info=True)
-            finally:
-                lock.release()
+                    logging.error("php write buf `%s` to cli `%s` failure", msg, self.cli_conns[msg[1]['cli']] if msg[1]['cli'] in self.cli_conns else None)
+                self.clients.add_no_response_msg(msg[1]['uid'], msg[1]['rid'], response_msg)
+                logging.info("client `%s` no response msg `%s`", msg[1]['uid'], self.clients.list_no_response_msg(msg[1]['uid']))
+            else:
+                #推响应
+                response_msg = {
+                    'id'   : 0,
+                    'data' : msg[1]['data']
+                }
+                for fd, conn in self.cli_conns.items():
+                    if conn['uid'] is None:
+                        continue
+                    if isinstance(msg[1]['uid'], str):
+                        if msg[1]['uid'] == conn['uid']:
+                            self.response_to_cli(conn['sock'], conn['uid'], response_msg)
+                    elif isinstance(msg[1]['uid'], list):
+                        if conn['uid'] in msg[1]['uid']:
+                            self.response_to_cli(conn['sock'], conn['uid'], response_msg)
+                    else:
+                        self.response_to_cli(conn['sock'], conn['uid'], response_msg)
         else:
             logging.error("php response error `%s`", msg)
             result = (False,"error msg format `{0}`".format(msg))
@@ -119,7 +155,7 @@ class CppsConn(object):
     def handle(self, client_sock, address):
         client_sock_fd = client_sock.fileno()
         logging.info('new connection from %s:%s,fd=%s' % (address[0], address[1], client_sock_fd,))
-        self.cli_conns[client_sock_fd] = {"sock" : client_sock, "time" : time.time(), "uid" : ""}
+        self.cli_conns[client_sock_fd] = {"sock" : client_sock, "time" : time.time(), "uid" : None}
 
         while True:
             try:
@@ -137,7 +173,6 @@ class CppsConn(object):
 
         if client_sock_fd in self.cli_conns:
             self.dis_connect(client_sock)
-            del self.cli_conns[client_sock_fd]
 
     def process_message(self, cli_sock, msg):
         """消息处理"""
