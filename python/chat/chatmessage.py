@@ -212,6 +212,7 @@ class ChatMessage(object):
 
         sender_client_fileno = client_socket.fileno()
         sender_client_uid    = self.conns[sender_client_fileno].get("uid", None) if self.conns[sender_client_fileno] else None
+        sender_client_gid    = self.conns[sender_client_fileno].get("gid", 0) if self.conns[sender_client_fileno] else 0
         sender_client_player = self.player.get(sender_client_uid, None) if sender_client_uid else None
         if sender_client_uid is None or sender_client_player is None:
             logging.error("receive error uid chat message `%s`, %s, %d" % (message, client_socket, len(self.conns)))
@@ -242,14 +243,14 @@ class ChatMessage(object):
                 "msg"      : chat_message["msg"],
                 "add_time" : chatutil.get_format_time()
             }
-            response = json.dumps(response_message)
+            sender_gid = int(chat_message['guild']) if "guild" in chat_message else sender_client_gid
+            response   = json.dumps(response_message)
             logging.info("response chat message to all `%s`" % (response,))
             for conn in self.conns.values():
                 if conn['uid'].count("system"):
                     continue
-                if  2 == chat_message['type']:
-                    if "guild" not in chat_message or conn['gid'] != int(chat_message['guild']):
-                        continue
+                if  2 == chat_message['type'] and conn['gid'] != sender_gid:
+                    continue
 
                 logging.info("response chat message loop `%s`" % (conn,))
                 self.process_write_message(conn["socket"], 'get_chat ' + response)
