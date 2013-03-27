@@ -31,7 +31,7 @@ class ChatMessage(object):
                 logging.info("check_connect_timeout start total connection %s" % (len(self.conns),))
                 check_time = time.time() - timeout
                 for fd, conn in self.conns.items():
-                    if conn["time"] <= check_time:
+                    if conn["time"] <= check_time and 0 == conn['uid'].count("system"):
                         self.dis_connect(conn["socket"], "check_connect_timeout")
                 logging.info("check_connect_timeout end total connection %s" % (len(self.conns),))
             gevent.sleep(30)
@@ -157,6 +157,9 @@ class ChatMessage(object):
 
         login_client_uid = str(login_message["uid"])
         login_client_fd  = client_socket.fileno()
+        if login_client_uid in self.mapping:
+            self.dis_connect(self.mapping[login_client_uid], "relogin")
+
         self.mapping[login_client_uid] = client_socket
         self.conns[login_client_fd]    = {"socket" : client_socket, "time" : time.time(), "uid" : login_client_uid}
         if self.player.get(login_client_uid) is None:
@@ -231,7 +234,7 @@ class ChatMessage(object):
 
             response_message = {
                 "type"     : chat_message["type"],
-                "sender"   : sender_client_uid,
+                "sender"   : sender_client_uid if 0 == sender_client_uid.count("system") else "system",
                 "name"     : sender_client_player.name,
                 "level"    : sender_client_player.level,
                 "first"    : sender_client_player.first_name,
@@ -242,6 +245,8 @@ class ChatMessage(object):
             response = json.dumps(response_message)
             logging.info("response chat message to all `%s`" % (response,))
             for conn in self.conns.values():
+                if conn['uid'].count("system"):
+                    continue
                 logging.info("response chat message loop `%s`" % (conn,))
                 self.process_write_message(conn["socket"], 'get_chat ' + response)
             self.add_history(response_message)
