@@ -46,6 +46,5 @@ action=service请求
   "data" : {"err_id":"", "results":[{"data":"响应内容"}, {"err_id":""}]}
 }
 
-
 php响应请求消息
-[0, {”action“:"pull|push","cli":"客户端对应fd", "uid":"用户编号", "rid":"对应请求编号","data":"响应数据,格式任意"}]
+00000xresult|pull|clifd|uid|rid|ext_data

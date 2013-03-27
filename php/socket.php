@@ -83,10 +83,10 @@ function write_client_msg($client_sock, $msg) {
 
 /**
  * @param array $msg array("cli" => "", "uid" => "", "rid" => "", "data" => array())
- * @return array
+ * @return string "result|pull|clifd|uid|rid|ext_data"
  */
 function process_client_msg($msg) {
-    return array(0, array("action" => "pull","cli" => $msg['cli'],"uid" => $msg['uid'],"rid" => $msg['rid'],"data" => "PHP result to other client"));
+    return sprintf("%d|%s|%s|%s|%s|%s", 0, "pull", $msg['cli'], $msg['uid'], $msg['rid'], "php servcie data");
 }
 
 function to_read($sock, $events, $arg) {
@@ -96,8 +96,8 @@ function to_read($sock, $events, $arg) {
          if (0 == $client_msg[0]) {
              try {
                 $client_msg = process_client_msg($client_msg[1]);
-                print_r($client_msg);
-                $result = write_client_msg($sock, json_encode($client_msg));
+                var_dump($client_msg);
+                $result = write_client_msg($sock, $client_msg);
                 print_r($result);
              } catch (Exception $e) {
                  write_client_msg($sock, json_encode(array(0, "exception " . $e->getMessage() . " in " . $e->getFile() . ",at " . $e->getLine())));
@@ -138,8 +138,8 @@ child:
 //            if (0 == $client_msg[0]) {
 //                try {
 //                   $client_msg = process_client_msg($client_msg[1]);
-//                   print_r($client_msg);
-//                   $result = write_client_msg($client_sock, json_encode($client_msg));
+//                   var_dump($client_msg);
+//                   $result = write_client_msg($client_sock, $client_msg);
 //                   print_r($result);
 //                } catch (Exception $e) {
 //                    write_client_msg($client_sock, json_encode(array(0, "exception " . $e->getMessage() . " in " . $e->getFile() . ",at " . $e->getLine())));

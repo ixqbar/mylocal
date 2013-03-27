@@ -37,13 +37,16 @@ class CppsConn(object):
 
         return self.lock[uid]
 
+    def get_sock_fd(self, client_sock):
+        return str(client_sock.fileno())
+
     def dis_connect(self, client_sock, close_msg=None):
         """关闭"""
         logging.info("to disconnect %s %s" % (client_sock, close_msg))
         try:
-            client_socket_fd = client_sock.fileno()
-            if client_socket_fd in self.cli_conns:
-                del self.cli_conns[client_socket_fd]
+            fd = self.get_sock_fd(client_sock)
+            if fd in self.cli_conns:
+                del self.cli_conns[fd]
             client_sock.close()
         except:
             logging.error("an error occurred", exc_info=True)
@@ -90,50 +93,45 @@ class CppsConn(object):
 
     def php_to_cli(self, msg):
         result = (True, "")
-        if isinstance(msg ,str):
-            msg = json.loads(msg.decode("utf-8"), "utf-8")
+        if not isinstance(msg ,str):
+            result = (False, "error msg `{0}` type".format(msg))
+            return result
+
+        #like ['result', 'pull', 'clifd', 'uid', 'rid', 'ext_data']
+        msg = msg.split("|", 5)
 
         logging.info("php response msg to cli `%s`", msg)
-        if isinstance(msg, list) \
-            and 2 == len(msg) \
-            and 0 == msg[0] \
-            and "action" in msg[1] \
-            and "cli" in msg[1] \
-            and "rid" in msg[1] \
-            and "uid" in msg[1] \
-            and "data" in msg[1]:
-
-            if msg[1]['action'] == "pull":
+        if isinstance(msg, list) and 6 == len(msg) and "0" == msg[0]:
+            if msg[1] == "pull":
                 ##请求响应
                 response_msg = {
-                    'id'   : msg[1]['rid'],
-                    'data' : msg[1]['data']
+                    'id'   : msg[4],
+                    'data' : msg[5]
                 }
-                if msg[1]['cli'] in self.cli_conns and self.cli_conns[msg[1]['cli']]['uid'] == msg[1]['uid']:
-                    result = self.response_to_cli(self.cli_conns[msg[1]['cli']]['sock'], msg[1]['uid'], response_msg)
+
+                if msg[2] in self.cli_conns and self.cli_conns[msg[2]]['uid'] == msg[3]:
+                    result = self.response_to_cli(self.cli_conns[msg[2]]['sock'], msg[3], response_msg)
                 else:
                     result = (False, "client not exists for `{0}`".format(msg))
 
                 if not result[0]:
-                    logging.error("php write buf `%s` to cli `%s` failure", msg, self.cli_conns[msg[1]['cli']] if msg[1]['cli'] in self.cli_conns else None)
-                self.clients.add_no_response_msg(msg[1]['uid'], msg[1]['rid'], response_msg)
-                logging.info("client `%s` no response msg `%s`", msg[1]['uid'], self.clients.list_no_response_msg(msg[1]['uid']))
+                    logging.error("php write buf `%s` to cli `%s` failure", msg, self.cli_conns[msg[2]] if msg[2] in self.cli_conns else None)
+                self.clients.add_no_response_msg(msg[3], msg[4], response_msg)
+                logging.info("client `%s` no response msg `%s`", msg[3], self.clients.list_no_response_msg(msg[3]))
             else:
                 #推响应
                 response_msg = {
                     'id'   : 0,
-                    'data' : msg[1]['data']
+                    'data' : msg[5]
                 }
+                target_uids = msg[3].split(",") if msg[3].count("|") else msg[3]
                 for fd, conn in self.cli_conns.items():
                     if conn['uid'] is None:
                         continue
-                    if isinstance(msg[1]['uid'], str):
-                        if msg[1]['uid'] == conn['uid']:
+                    if isinstance(target_uids, list):
+                        if conn['uid'] in target_uids:
                             self.response_to_cli(conn['sock'], conn['uid'], response_msg)
-                    elif isinstance(msg[1]['uid'], list):
-                        if conn['uid'] in msg[1]['uid']:
-                            self.response_to_cli(conn['sock'], conn['uid'], response_msg)
-                    else:
+                    elif target_uids == "0" or conn['uid'] == target_uids:
                         self.response_to_cli(conn['sock'], conn['uid'], response_msg)
         else:
             logging.error("php response error `%s`", msg)
@@ -158,9 +156,9 @@ class CppsConn(object):
         return result
 
     def handle(self, client_sock, address):
-        client_sock_fd = client_sock.fileno()
-        logging.info('new connection from %s:%s,fd=%s' % (address[0], address[1], client_sock_fd,))
-        self.cli_conns[client_sock_fd] = {"sock" : client_sock, "time" : time.time(), "uid" : None}
+        fd = self.get_sock_fd(client_sock)
+        logging.info('new connection from %s:%s,fd=%s' % (address[0], address[1], fd,))
+        self.cli_conns[fd] = {"sock" : client_sock, "time" : time.time(), "uid" : None}
 
         while True:
             try:
@@ -176,10 +174,10 @@ class CppsConn(object):
                 logging.error("an error occurred", exc_info=True)
                 break;
 
-        if client_sock_fd in self.cli_conns:
+        if fd in self.cli_conns:
             self.dis_connect(client_sock)
 
-    def process_message(self, cli_sock, msg):
+    def process_message(self, client_sock, msg):
         """消息处理"""
         result = (True, "")
 
@@ -191,7 +189,7 @@ class CppsConn(object):
             lock = self.get_lock(tmp_msg[1])
             lock.acquire()
             try:
-                result = self.handlers[tmp_msg[0]](cli_sock, tmp_msg[1], tmp_msg[2], tmp_msg[3])
+                result = self.handlers[tmp_msg[0]](client_sock, tmp_msg[1], tmp_msg[2], tmp_msg[3])
             except:
                 result = (False, traceback.format_exc())
                 logging.error("an error occurred", exc_info=True)
@@ -202,52 +200,52 @@ class CppsConn(object):
 
         return result
 
-    def login(self, cli_sock, uid, rid, data):
+    def login(self, client_sock, uid, rid, data):
         if isinstance(data, str):
             data = json.loads(data.decode('utf-8'), 'utf-8')
 
         if not isinstance(data, dict) or not "uid" in data or not "timestamp" in data:
-            logging.error("error login message `%s` from `%s`", data, cli_sock)
+            logging.error("error login message `%s` from `%s`", data, client_sock)
             response_message = {
                 "id"   : rid,
                 "data" : {"err_id":"error login message format"}
             }
-            self.ser_to_cli(cli_sock, uid, json.dumps(response_message))
+            self.ser_to_cli(client_sock, uid, json.dumps(response_message))
             return (False, "error login message format")
 
         hm = hashlib.md5();
         hm.update(self.secret_key + str(data["uid"]) + str(data["timestamp"]) + str(data["random"]))
         if uid != str(data['uid']) or data["sign"] != hm.hexdigest():
-            logging.error("error login message `%s` from `%s`", data, cli_sock)
+            logging.error("error login message `%s` from `%s`", data, client_sock)
             response_message = {
                 "id"   : rid,
                 "data" : {"err_id":"error login message sign"}
             }
-            self.ser_to_cli(cli_sock, uid, json.dumps(response_message))
+            self.ser_to_cli(client_sock, uid, json.dumps(response_message))
             return (False, "error login message sign")
 
         client_player_uid = cppsutil.to_str(uid)
         if client_player_uid in self.rel_mapping:
             self.dis_connect(self.rel_mapping[client_player_uid], "relogin")
 
-        logging.info("login message `%s` from `%s`", data, cli_sock)
+        logging.info("login message `%s` from `%s`", data, client_sock)
         response_message = {
             "id"   : rid,
             "data" : {"err_id":""}
         }
-        cli_fd = cli_sock.fileno()
-        self.cli_conns[cli_fd]['uid']       = client_player_uid
-        self.rel_mapping[client_player_uid] = cli_sock
+        fd = self.get_sock_fd(client_sock)
+        self.cli_conns[fd]['uid']       = client_player_uid
+        self.rel_mapping[client_player_uid] = client_sock
         self.clients.login(data);
-        self.ser_to_cli(cli_sock, uid, json.dumps(response_message))
+        self.ser_to_cli(client_sock, uid, json.dumps(response_message))
 
         return (True, "")
 
-    def hello(self, cli_sock, uid, rid, data):
+    def hello(self, client_sock, uid, rid, data):
         result = (True, "")
-
-        if self.cli_conns[cli_sock.fileno()] is not None:
-            self.cli_conns[cli_sock.fileno()]["time"] = time.time()
+        fd = self.get_sock_fd(client_sock)
+        if self.cli_conns[fd] is not None:
+            self.cli_conns[fd]["time"] = time.time()
             response_message = {
                 "id"   : rid,
                 "data" : {"err_id":""}
@@ -258,22 +256,22 @@ class CppsConn(object):
                 "data" : {"err_id":"not found target cli"}
             }
 
-        self.ser_to_cli(cli_sock, uid, json.dumps(response_message))
+        self.ser_to_cli(client_sock, uid, json.dumps(response_message))
 
         return result
 
-    def service(self, cli_sock, uid, rid, data):
+    def service(self, client_sock, uid, rid, data):
         result = (True, "")
-        cli_fd = cli_sock.fileno()
+        fd = self.get_sock_fd(client_sock)
         if self.clients.is_reconnect(uid):
             no_response_msg = self.clients.get_no_response_msg(uid, rid)
             if no_response_msg:
-                result = self.ser_to_cli(cli_sock, uid, json.dumps(no_response_msg))
+                result = self.ser_to_cli(client_sock, uid, json.dumps(no_response_msg))
                 if not result[0]:
                     self.clients.add_no_response_msg(uid,rid,no_response_msg)
             else:
-                self.cli_to_php({'cli':cli_fd,'uid':uid,'rid':rid,'data':data})
+                self.cli_to_php({'cli':fd,'uid':uid,'rid':rid,'data':data})
         else:
-            self.cli_to_php({'cli':cli_fd,'uid':uid,'rid':rid,'data':data})
+            self.cli_to_php({'cli':fd,'uid':uid,'rid':rid,'data':data})
 
         return result
