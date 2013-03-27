@@ -79,7 +79,7 @@ class ChatMessage(object):
         """读数据"""
         logging.info("client `%s` connected `%s`", client_socket, address)
         client_socket_fd = client_socket.fileno()
-        self.conns[client_socket_fd] = {"socket" : client_socket, "time" : time.time(), "uid" : ""}
+        self.conns[client_socket_fd] = {"socket" : client_socket, "time" : time.time(), "uid" : "", "gid" : 0}
 
         while True:
             try:
@@ -161,7 +161,7 @@ class ChatMessage(object):
             self.dis_connect(self.mapping[login_client_uid], "relogin")
 
         self.mapping[login_client_uid] = client_socket
-        self.conns[login_client_fd]    = {"socket" : client_socket, "time" : time.time(), "uid" : login_client_uid}
+        self.conns[login_client_fd]    = {"socket" : client_socket, "time" : time.time(), "uid" : login_client_uid, "gid" : int(login_message['gid']) if 'gid' in login_message else 0}
         if self.player.get(login_client_uid) is None:
             self.player[login_client_uid]  = chatplayer.ChatPlayer()
         self.player[login_client_uid].refresh_data(login_message)
@@ -247,6 +247,10 @@ class ChatMessage(object):
             for conn in self.conns.values():
                 if conn['uid'].count("system"):
                     continue
+                if  2 == chat_message['type']:
+                    if "guild" not in chat_message or conn['gid'] != int(chat_message['guild']):
+                        continue
+
                 logging.info("response chat message loop `%s`" % (conn,))
                 self.process_write_message(conn["socket"], 'get_chat ' + response)
             self.add_history(response_message)
