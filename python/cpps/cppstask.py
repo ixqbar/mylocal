@@ -48,6 +48,7 @@ class CppsTask(object):
             logging.info("write php response to client `%s`", result)
             self.cli_conns.php_to_cli(result[1])
         else:
+            self.close()
             logging.error("read `%s` buf failure `%s`", self.php_sock, result)
 
     def run(self):
