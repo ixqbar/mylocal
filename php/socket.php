@@ -164,6 +164,8 @@ child:
     event_add($event);
     // start event loop
     event_base_loop($base);
+    //close
+    socket_close($client_sock);
     exit;
 }
 
