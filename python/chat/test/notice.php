@@ -218,6 +218,20 @@ class Chat {
         return $guild_id ? $this->send_guild_notice($guild_id, $message) : $this->send_golbal_notice($message);
     }
 
+    /**
+     *
+     * @param array $player_data
+     * @return boolean
+     */
+    public function update_player_data($player_data) {
+        if (!$this->connected) {
+            return false;
+        }
+
+        $chat_msg = "update " . json_encode($player_data);
+        return false !== $this->send($chat_msg);
+    }
+
 }
 
 $chat = Chat::instance();

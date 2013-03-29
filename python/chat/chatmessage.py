@@ -4,7 +4,6 @@ import json
 import hashlib
 import time
 import chatplayer
-import inspect
 import gevent
 import logging
 import chatutil
@@ -19,21 +18,22 @@ class ChatMessage(object):
         self.player    = dict()                         #uid=>ChatPlayer()
         self.mapping   = weakref.WeakValueDictionary()  #uid=>socket.fileno()
         self.handlers  = {
-            "login" : self.login,
-            "hello" : self.hello,
-            "chat"  : self.chat,
+            "login"  : self.login,
+            "update" : self.update,
+            "hello"  : self.hello,
+            "chat"   : self.chat,
         }
         self.history   = list()
 
     def check_connect_timeout(self, timeout=60):
         while True:
             if len(self.conns):
-                logging.info("check_connect_timeout start total connection %s" % (len(self.conns),))
+                logging.info("check_connect_timeout start total connection %s", len(self.conns))
                 check_time = time.time() - timeout
                 for fd, conn in self.conns.items():
                     if conn["time"] <= check_time and 0 == conn['uid'].count("system"):
                         self.dis_connect(conn["socket"], "check_connect_timeout")
-                logging.info("check_connect_timeout end total connection %s" % (len(self.conns),))
+                logging.info("check_connect_timeout end total connection %s", len(self.conns))
             gevent.sleep(30)
 
     def get_history(self):
@@ -52,7 +52,7 @@ class ChatMessage(object):
 
     def dis_connect(self, client_socket, close_msg=None):
         """关闭"""
-        logging.info("to disconnect %s %s" % (client_socket, close_msg))
+        logging.info("to disconnect %s %s", client_socket, close_msg)
         try:
             client_socket_fd = client_socket.fileno()
             if client_socket_fd in self.conns:
@@ -65,14 +65,14 @@ class ChatMessage(object):
 
     def process_write_message(self, client_socket, message):
         """写数据"""
-        logging.info("write response message `%s` to %s" % (message, client_socket))
+        logging.info("write response message `%s` to %s",  message, client_socket)
         try:
             err_no,err_msg = chatutil.write_sock_buf(client_socket, message)
             if err_no:
                 logging.error("write response message to `%s` failure `%s`", client_socket, err_msg)
                 self.dis_connect(client_socket)
         except:
-            logging.error("an error occurred %s" % (inspect.stack(),))
+            logging.error("an error occurred:", exc_info=True)
             self.dis_connect(client_socket)
 
     def handle(self, client_socket, address):
@@ -92,7 +92,7 @@ class ChatMessage(object):
                     logging.error("handle cli msg failure `%s`", err_msg)
                     break;
             except:
-                logging.error(inspect.stack())
+                logging.error("an error occurred:", exc_info=True)
                 break;
 
         if client_socket_fd in self.conns:
@@ -100,7 +100,7 @@ class ChatMessage(object):
 
     def process_message(self, client_socket, message):
         """todo"""
-        logging.info("receive message `%s`" % (message,))
+        logging.info("receive message `%s`", message)
         chat_message = message.split(" ", 1)
         chat_action  = chat_message[0].lower()
         if  chat_action in self.handlers:
@@ -114,7 +114,7 @@ class ChatMessage(object):
             sign = MD5.hash(密钥+uid + timestamp + random)
         """
         if len(self.conns) > self.max_conns:
-            logging.error("max conn, disconnect %s" % (client_socket,))
+            logging.error("max conn, disconnect %s", client_socket)
             response_message = {
                 "type"   : "login",
                 "result" : "err",
@@ -124,7 +124,7 @@ class ChatMessage(object):
             self.process_write_message(client_socket, 'rep ' + json.dumps(response_message))
             return ("max connected", True)
 
-        logging.info("handle login message `%s`, %s" % (message, client_socket))
+        logging.info("handle login message `%s`, %s", message, client_socket)
         login_message = json.loads(message.decode('utf-8'), "utf-8")
         if "uid" not in login_message \
             or "first" not in login_message \
@@ -132,7 +132,7 @@ class ChatMessage(object):
             or "timestamp" not in login_message \
             or "random" not in login_message \
             or "sign" not in login_message:
-            logging.error("receive error login message attribute `%s`" % (message,))
+            logging.error("receive error login message attribute `%s`", message)
             response_message = {
                 "type"   : "login",
                 "result" : "err",
@@ -145,7 +145,7 @@ class ChatMessage(object):
         hm = hashlib.md5();
         hm.update(self.login_key + str(login_message["uid"]) + str(login_message["timestamp"]) + str(login_message["random"]))
         if login_message["sign"] != hm.hexdigest():
-            logging.error("receive error sign login message `%s`" % (message,))
+            logging.error("receive error sign login message `%s`", message)
             response_message = {
                 "type"   : "login",
                 "result" : "err",
@@ -163,7 +163,7 @@ class ChatMessage(object):
         self.mapping[login_client_uid] = client_socket
         self.conns[login_client_fd]    = {"socket" : client_socket, "time" : time.time(), "uid" : login_client_uid, "gid" : int(login_message['gid']) if 'gid' in login_message else 0}
         if self.player.get(login_client_uid) is None:
-            self.player[login_client_uid]  = chatplayer.ChatPlayer()
+            self.player[login_client_uid] = chatplayer.ChatPlayer()
         self.player[login_client_uid].refresh_data(login_message)
 
         response_message = {
@@ -175,15 +175,54 @@ class ChatMessage(object):
 
         return ("ok", False)
 
+    def update(self, client_socket, message):
+        """
+            update
+        """
+        logging.info("handle update message `%s`", message)
+        update_message = json.loads(message.decode('utf-8'))
+        if isinstance(update_message, dict) and "uid" in update_message:
+            target_client_uid = str(update_message["uid"]) if update_message["uid"] else None
+            if  target_client_uid is not None and target_client_uid in self.player and target_client_uid in self.mapping:
+                if self.player.get(target_client_uid) is not None:
+                    self.player[target_client_uid].refresh_data(update_message)
+                target_client_socket_fd = self.mapping[target_client_uid].fileno()
+
+                if self.conns[target_client_socket_fd] is not None and "gid" in update_message:
+                    self.conns[target_client_socket_fd]["gid"] = update_message['gid']
+
+                response_message = {
+                    "type"     : "update",
+                    "result"   : "ok",
+                }
+                self.process_write_message(client_socket, 'rep ' + json.dumps(response_message))
+            else:
+                response_message = {
+                    "type"     : "update",
+                    "result"   : "err",
+                    "msg"      : "error to fix target"
+                }
+                self.process_write_message(client_socket, 'rep ' + json.dumps(response_message))
+        else:
+            logging.error("handle update message `%s` error %s", message, client_socket)
+            response_message = {
+                "type"     : "update",
+                "result"   : "err",
+                "msg"      : "error update message"
+            }
+            self.process_write_message(client_socket, 'rep ' + json.dumps(response_message))
+
+        return ("ok", False)
+
     def hello(self, client_socket, message):
         """
             hello timestamp
         """
-        logging.info("handle hello message `%s`" % (message,))
+        logging.info("handle hello message `%s`", message)
         if self.conns[client_socket.fileno()] is not None:
             self.conns[client_socket.fileno()]["time"] = time.time()
         else:
-            logging.error("handle hello message `%s` error none %s" % (message, client_socket,))
+            logging.error("handle hello message `%s` error none %s", message, client_socket)
 
         return ("ok", False)
 
@@ -197,10 +236,10 @@ class ChatMessage(object):
             chat {"type":2, "msg":"xxxxxxxxxxxx" }
         """
 
-        logging.info("handle chat message `%s`" % (message,))
+        logging.info("handle chat message `%s`", message)
         chat_message = json.loads(message.decode('utf-8'))
         if int(chat_message["type"]) not in (0, 1, 2):
-            logging.error("receive error type chat message `%s`" % (message,))
+            logging.error("receive error type chat message `%s`", message)
             error_response_message = json.dumps({
                 "type"     : "chat",
                 "result"   : "err",
@@ -215,7 +254,7 @@ class ChatMessage(object):
         sender_client_gid    = self.conns[sender_client_fileno].get("gid", 0) if self.conns[sender_client_fileno] else 0
         sender_client_player = self.player.get(sender_client_uid, None) if sender_client_uid else None
         if sender_client_uid is None or sender_client_player is None:
-            logging.error("receive error uid chat message `%s`, %s, %d" % (message, client_socket, len(self.conns)))
+            logging.error("receive error uid chat message `%s`, %s, %d", message, client_socket, len(self.conns))
             error_response_message = json.dumps({
                 "type"     : "chat",
                 "result"   : "err",
@@ -245,14 +284,14 @@ class ChatMessage(object):
             }
             sender_gid = int(chat_message['guild']) if "guild" in chat_message else sender_client_gid
             response   = json.dumps(response_message)
-            logging.info("response chat message to all `%s`" % (response,))
+            logging.info("response chat message to all `%s`", response)
             for conn in self.conns.values():
                 if conn['uid'].count("system"):
                     continue
                 if  2 == chat_message['type'] and conn['gid'] != sender_gid:
                     continue
 
-                logging.info("response chat message loop `%s`" % (conn,))
+                logging.info("response chat message loop `%s`", conn)
                 self.process_write_message(conn["socket"], 'get_chat ' + response)
             self.add_history(response_message)
         else:
@@ -275,7 +314,7 @@ class ChatMessage(object):
                     "add_time" : chatutil.get_format_time()
                 }
                 response = json.dumps(response_message)
-                logging.info("response chat message to one `%s`, target %s" % (response, self.mapping[target_client_uid],))
+                logging.info("response chat message to one `%s`, target %s", response, self.mapping[target_client_uid])
                 self.process_write_message(self.mapping[target_client_uid], 'get_chat ' + response)
                 self.add_history(response_message)
             else:
