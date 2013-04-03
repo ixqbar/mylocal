@@ -69,8 +69,11 @@ class ServerInfo(object):
         for hc_id,score in medal_rank_list:
             medal,level = self.deparse_medal_rank(score)
             player_info = redis_handle.hmget("player:" + hc_id, "name")
-            player_name = player_info[0].decode("utf-8") if len(player_info[0]) else ""
-            content.append("%+3s|%+10s|%+6s|%+5s|%-s" % (position, hc_id, medal, level, player_name))
+            if player_info:
+                player_name = player_info[0].decode("utf-8") if player_info[0] and len(player_info[0]) else ""
+                content.append("%+3s|%+10s|%+6s|%+5s|%-s" % (position, hc_id, medal, level, player_name))
+            else:
+                logging.error("player `%s` no name", hc_id)
             position    += 1
 
         return self.send_mail("%s排行信息" % (time.strftime("%Y-%m-%d"),), "\n".join(content).encode("utf-8"))
