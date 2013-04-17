@@ -230,7 +230,7 @@ class ChatMessage(object):
     def notice(self, client_socket, message):
         """
             公会通告
-            notice {"type":0, "guild":x, "msg":{详细信息}}
+            notice {"type":0, "guild":x,"exclude":x, "msg":{详细信息}}
             邮件通告
             notice {"type":1, "target":x,"msg":{详细信息}}
         """
@@ -257,7 +257,9 @@ class ChatMessage(object):
             self.process_write_message(client_socket, 'rep ' + json.dumps(response_message))
             for conn in self.conns.values():
                 print conn
-                if conn['uid'].count("system") or conn['gid'] != int(notice_message['guild']):
+                if conn['uid'].count("system") \
+                    or conn['gid'] != int(notice_message['guild']) \
+                    or conn['uid'] == str(notice_message['exclude']):
                     continue
                 logging.info("response notice message loop `%s`", conn)
                 self.process_write_message(conn["socket"], 'get_guild ' + notice_message['msg'])
