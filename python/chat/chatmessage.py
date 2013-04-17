@@ -22,6 +22,7 @@ class ChatMessage(object):
             "update" : self.update,
             "hello"  : self.hello,
             "chat"   : self.chat,
+            "notice" : self.notice
         }
         self.history   = list()
 
@@ -144,7 +145,7 @@ class ChatMessage(object):
 
         hm = hashlib.md5();
         hm.update(self.login_key + str(login_message["uid"]) + str(login_message["timestamp"]) + str(login_message["random"]))
-        if login_message["sign"] != hm.hexdigest():
+        if login_message["sign"].upper() != hm.hexdigest().upper():
             logging.error("receive error sign login message `%s`", message)
             response_message = {
                 "type"   : "login",
@@ -226,13 +227,64 @@ class ChatMessage(object):
 
         return ("ok", False)
 
+    def notice(self, client_socket, message):
+        """
+            公会通告
+            notice {"type":0, "guild":x, "msg":{详细信息}}
+            邮件通告
+            notice {"type":1, "target":x,"msg":{详细信息}}
+        """
+        logging.info("handle notice message `%s`", message)
+        notice_message = json.loads(message.decode('utf-8'))
+        if int(notice_message["type"]) not in (0, 1):
+            logging.error("receive error type chat message `%s`", message)
+            error_response_message = json.dumps({
+                "type"     : "notice",
+                "result"   : "err",
+                "msg_type" : notice_message["type"],
+                "msg"      : "error type"
+            })
+            self.process_write_message(client_socket, 'rep ' + error_response_message)
+            return ("error chat message type", False)
+
+        if int(notice_message['type']) == 0:
+            response_message = {
+                "type"     : "notice",
+                "result"   : "ok",
+                "msg_type" : notice_message["type"],
+                }
+
+            self.process_write_message(client_socket, 'rep ' + json.dumps(response_message))
+            for conn in self.conns.values():
+                print conn
+                if conn['uid'].count("system") or conn['gid'] != int(notice_message['guild']):
+                    continue
+                logging.info("response notice message loop `%s`", conn)
+                self.process_write_message(conn["socket"], 'get_guild ' + notice_message['msg'])
+
+        elif int(notice_message['type']) == 1:
+            target_client_uid = str(notice_message["target"]) if notice_message["target"] else None
+            if  target_client_uid is not None and target_client_uid in self.player and target_client_uid in self.mapping:
+                logging.info("response notice message to target %s", self.mapping[target_client_uid])
+                self.process_write_message(self.mapping[target_client_uid], 'get_message ' + notice_message['msg'])
+            else:
+                response_message = {
+                    "type"     : "notice",
+                    "result"   : "err",
+                    "msg_type" : notice_message["type"],
+                    "msg"      : "error to fix target"
+                }
+                self.process_write_message(client_socket, 'rep ' + json.dumps(response_message))
+
+        return ("ok", False)
+
     def chat(self, client_socket, message):
         """
-            私信请求
+            私聊
             chat {"type":0, "target":"1000018","msg":"xxxxxxxxxxxx" }
-            #小喇叭
+            公共
             chat {"type":1, "msg":"xxxxxxxxxxxx" }
-            #大喇叭
+            公会
             chat {"type":2, "msg":"xxxxxxxxxxxx" }
         """
 
