@@ -24,7 +24,8 @@ class ChatMessage(object):
             "chat"   : self.chat,
             "notice" : self.notice
         }
-        self.history   = list()
+        self.channel_history = {"public":[],"guild":{}}
+        self.whisper_history = dict()
 
     def check_connect_timeout(self, timeout=60):
         while True:
@@ -37,13 +38,58 @@ class ChatMessage(object):
                 logging.info("check_connect_timeout end total connection %s", len(self.conns))
             gevent.sleep(30)
 
-    def get_history(self):
-        return self.history
+    def get_all_history(self, target=0, guild_id=0):
+        history = list()
+        for message in self.get_public_history():
+            history.append(message)
 
-    def add_history(self, message):
-        self.history.append(message)
-        if len(self.history) > 100:
-            self.history = self.history[-50:]
+        if guild_id:
+            for message in self.get_guild_history(guild_id):
+                history.append(message)
+
+        for message in self.get_whisper_history(target):
+            history.append(message)
+
+        return history
+
+    def get_public_history(self):
+        return self.channel_history['public']
+
+    def get_guild_history(self, guild_id):
+        return self.channel_history['guild'][guild_id] if guild_id in self.channel_history['guild'][guild_id] else []
+
+    def get_whisper_history(self, target):
+        return self.whisper_history[target] if target in self.whisper_history[target] else []
+
+    def add_history(self, message, target=0, guild_id=0):
+        """
+            message 消息
+            target  接受者 0为大众
+            guild_id 公会消息
+        """
+        if isinstance(target, int) and 0 == target:
+            #公共聊天，包括公会
+            if 0 == guild_id:
+                #公共聊天
+                self.channel_history['public'].append(message)
+                if len(self.channel_history['public']) > 100:
+                    self.channel_history['public'] = self.channel_history['public'][-50:]
+            else:
+                #公会聊天
+                if guild_id not in self.channel_history['guild']:
+                    self.channel_history['guild'][guild_id] = list()
+
+                self.channel_history['guild'][guild_id].append(message)
+                if len(self.channel_history['guild'][guild_id]) > 100:
+                    self.channel_history['guild'][guild_id] = self.channel_history['guild'][guild_id][-50:]
+        else:
+            #私聊
+            if target not in self.whisper_history:
+                self.whisper_history[target] = list()
+
+            self.whisper_history[target].append(message)
+            if len(self.whisper_history[target]) > 100:
+                self.whisper_history[target] = self.whisper_history[target][-50:]
 
     def close(self):
         """关闭"""
@@ -157,6 +203,7 @@ class ChatMessage(object):
             return ("error login message sign", True)
 
         login_client_uid = str(login_message["uid"])
+        login_client_gid = int(login_message['gid']) if 'gid' in login_message else 0
         login_client_fd  = client_socket.fileno()
         if login_client_uid in self.mapping:
             self.dis_connect(self.mapping[login_client_uid], "relogin")
@@ -166,7 +213,7 @@ class ChatMessage(object):
             "socket" : client_socket,
             "time"   : time.time(),
             "uid"    : login_client_uid,
-            "gid"    : int(login_message['gid']) if 'gid' in login_message else 0
+            "gid"    : login_client_gid
         }
         if self.player.get(login_client_uid) is None:
             self.player[login_client_uid] = chatplayer.ChatPlayer()
@@ -174,10 +221,14 @@ class ChatMessage(object):
 
         response_message = {
             "type"    : "login",
-            "result"  : "ok",
-            "history" : self.get_history()
+            "result"  : "ok"
         }
         self.process_write_message(client_socket, 'rep ' + json.dumps(response_message))
+
+        #聊天记录
+        all_history = self.get_all_history(login_client_uid,login_client_gid)
+        if len(all_history):
+            self.process_write_message(client_socket, 'get_chat ' + json.dumps(all_history))
 
         return ("ok", False)
 
@@ -194,15 +245,23 @@ class ChatMessage(object):
                 if self.player.get(target_client_uid) is not None:
                     self.player[target_client_uid].refresh_data(update_message)
                 ##
+                push_guild_history = []
                 target_client_socket_fd = self.mapping[target_client_uid].fileno()
-                if "gid" in update_message and self.conns[target_client_socket_fd] is not None:
+                if "gid" in update_message \
+                    and self.conns[target_client_socket_fd] is not None \
+                    and int(update_message['gid']) != self.conns[target_client_socket_fd]['gid']:
                     self.conns[target_client_socket_fd]["gid"] = int(update_message['gid'])
+                    push_guild_history = self.get_guild_history(int(update_message['gid']))
                 ##
                 response_message = {
                     "type"     : "update",
                     "result"   : "ok",
                 }
                 self.process_write_message(client_socket, 'rep ' + json.dumps(response_message))
+
+                ##push guild history
+                if len(push_guild_history):
+                    self.process_write_message(client_socket, 'get_chat ' + json.dumps(push_guild_history))
             else:
                 response_message = {
                     "type"     : "update",
@@ -353,7 +412,7 @@ class ChatMessage(object):
 
                 logging.info("response chat message loop `%s`", conn)
                 self.process_write_message(conn["socket"], 'get_chat ' + response)
-            self.add_history(response_message)
+            self.add_history(response_message, 0, sender_gid)
         else:
             target_client_uid = str(chat_message["target"]) if chat_message["target"] else None
             if  target_client_uid is not None and target_client_uid in self.player and target_client_uid in self.mapping:
@@ -376,7 +435,7 @@ class ChatMessage(object):
                 response = json.dumps(response_message)
                 logging.info("response chat message to one `%s`, target %s", response, self.mapping[target_client_uid])
                 self.process_write_message(self.mapping[target_client_uid], 'get_chat ' + response)
-                self.add_history(response_message)
+                self.add_history(response_message, target_client_uid, 0)
             else:
                 response_message = {
                     "type"     : "chat",
