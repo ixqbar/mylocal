@@ -263,7 +263,7 @@ class ChatMessage(object):
 
                 ##push guild history
                 if len(push_guild_history):
-                    self.process_write_message(client_socket, 'get_chat ' + json.dumps(push_guild_history))
+                    self.process_write_message(self.mapping[target_client_uid], 'get_chat ' + json.dumps(push_guild_history))
             else:
                 response_message = {
                     "type"     : "update",
