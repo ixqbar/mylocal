@@ -56,10 +56,10 @@ class ChatMessage(object):
         return self.channel_history['public']
 
     def get_guild_history(self, guild_id):
-        return self.channel_history['guild'][guild_id] if guild_id and guild_id in self.channel_history['guild'][guild_id] else []
+        return self.channel_history['guild'][guild_id] if guild_id and guild_id in self.channel_history['guild'] else []
 
     def get_whisper_history(self, target):
-        return self.whisper_history[target] if target in self.whisper_history[target] else []
+        return self.whisper_history[target] if target in self.whisper_history else []
 
     def add_history(self, message, target=0, guild_id=0):
         """
@@ -226,9 +226,10 @@ class ChatMessage(object):
         self.process_write_message(client_socket, 'rep ' + json.dumps(response_message))
 
         #聊天记录
-        all_history = self.get_all_history(login_client_uid,login_client_gid)
-        if len(all_history):
-            self.process_write_message(client_socket, 'get_chat ' + json.dumps(all_history))
+        if login_client_uid.count('system'):
+            all_history = self.get_all_history(login_client_uid,login_client_gid)
+            if len(all_history):
+                self.process_write_message(client_socket, 'get_chat ' + json.dumps(all_history))
 
         return ("ok", False)
 
