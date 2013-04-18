@@ -226,7 +226,7 @@ class ChatMessage(object):
         self.process_write_message(client_socket, 'rep ' + json.dumps(response_message))
 
         #聊天记录
-        if login_client_uid.count('system'):
+        if 0 == login_client_uid.count('system'):
             all_history = self.get_all_history(login_client_uid,login_client_gid)
             if len(all_history):
                 self.process_write_message(client_socket, 'get_chat ' + json.dumps(all_history))
