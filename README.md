@@ -2,4 +2,4 @@
 
 http://xingqibawiki.sinaapp.com
 
-http://ixqbar.sinaapp.com
+http://xingqiba.sinaapp.com
