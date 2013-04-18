@@ -162,7 +162,12 @@ class ChatMessage(object):
             self.dis_connect(self.mapping[login_client_uid], "relogin")
 
         self.mapping[login_client_uid] = client_socket
-        self.conns[login_client_fd]    = {"socket" : client_socket, "time" : time.time(), "uid" : login_client_uid, "gid" : int(login_message['gid']) if 'gid' in login_message else 0}
+        self.conns[login_client_fd]    = {
+            "socket" : client_socket,
+            "time"   : time.time(),
+            "uid"    : login_client_uid,
+            "gid"    : int(login_message['gid']) if 'gid' in login_message else 0
+        }
         if self.player.get(login_client_uid) is None:
             self.player[login_client_uid] = chatplayer.ChatPlayer()
         self.player[login_client_uid].refresh_data(login_message)
@@ -178,20 +183,21 @@ class ChatMessage(object):
 
     def update(self, client_socket, message):
         """
-            update
+            update {"uid":x, "gid":x, "name":x, "","first":"","last":"","level":x}
         """
         logging.info("handle update message `%s`", message)
         update_message = json.loads(message.decode('utf-8'))
         if isinstance(update_message, dict) and "uid" in update_message:
             target_client_uid = str(update_message["uid"]) if update_message["uid"] else None
             if  target_client_uid is not None and target_client_uid in self.player and target_client_uid in self.mapping:
+                ##
                 if self.player.get(target_client_uid) is not None:
                     self.player[target_client_uid].refresh_data(update_message)
+                ##
                 target_client_socket_fd = self.mapping[target_client_uid].fileno()
-
-                if self.conns[target_client_socket_fd] is not None and "gid" in update_message:
-                    self.conns[target_client_socket_fd]["gid"] = update_message['gid']
-
+                if "gid" in update_message and self.conns[target_client_socket_fd] is not None:
+                    self.conns[target_client_socket_fd]["gid"] = int(update_message['gid'])
+                ##
                 response_message = {
                     "type"     : "update",
                     "result"   : "ok",
