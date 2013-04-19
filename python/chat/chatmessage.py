@@ -256,8 +256,8 @@ class ChatMessage(object):
                         push_guild_history = self.get_guild_history(int(update_message['gid']))
                 ##
                 response_message = {
-                    "type"     : "update",
-                    "result"   : "ok",
+                    "type"   : "update",
+                    "result" : "ok",
                 }
                 self.process_write_message(client_socket, 'rep ' + json.dumps(response_message))
 
@@ -266,17 +266,17 @@ class ChatMessage(object):
                     self.process_write_message(self.mapping[target_client_uid], 'get_chat ' + json.dumps(push_guild_history))
             else:
                 response_message = {
-                    "type"     : "update",
-                    "result"   : "err",
-                    "msg"      : "error to fix target"
+                    "type"   : "update",
+                    "result" : "err",
+                    "msg"    : "error to fix target"
                 }
                 self.process_write_message(client_socket, 'rep ' + json.dumps(response_message))
         else:
             logging.error("handle update message `%s` error %s", message, client_socket)
             response_message = {
-                "type"     : "update",
-                "result"   : "err",
-                "msg"      : "error update message"
+                "type"   : "update",
+                "result" : "err",
+                "msg"    : "error update message"
             }
             self.process_write_message(client_socket, 'rep ' + json.dumps(response_message))
 
