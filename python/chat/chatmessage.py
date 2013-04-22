@@ -414,7 +414,7 @@ class ChatMessage(object):
 
                 logging.info("response chat message loop `%s`", conn)
                 self.process_write_message(conn["socket"], 'get_chat ' + response)
-            self.add_history(response_message, 0, sender_gid)
+            self.add_history(response_message, 0, sender_gid if 2 == chat_message['type'] else 0)
         else:
             target_client_uid = str(chat_message["target"]) if chat_message["target"] else None
             if  target_client_uid is not None and target_client_uid in self.player and target_client_uid in self.mapping:
