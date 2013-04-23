@@ -287,12 +287,26 @@ class ChatMessage(object):
             hello timestamp
         """
         logging.info("handle hello message `%s`", message)
+        result = ("ok", False)
         if self.conns[client_socket.fileno()] is not None:
             self.conns[client_socket.fileno()]["time"] = time.time()
+            response_message = {
+                "type"   : "hello",
+                "result" : "ok"
+            }
+            self.process_write_message(client_socket, 'rep ' + json.dumps(response_message))
+
         else:
             logging.error("handle hello message `%s` error none %s", message, client_socket)
+            response_message = {
+                "type"   : "hello",
+                "result" : "err",
+                "msg"    : "error to fix mapping"
+            }
+            self.process_write_message(client_socket, 'rep ' + json.dumps(response_message))
+            result = ("error to fix mapping", True)
 
-        return ("ok", False)
+        return result
 
     def notice(self, client_socket, message):
         """
