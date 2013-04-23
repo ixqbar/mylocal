@@ -50,7 +50,7 @@ def read_sock_buf(sock, buf_len=6, is_header=True):
         return (1, "error buf end flag `%s`" % (buf, ))
 
 def write_sock_buf(sock, buf, header_len=6):
-    if not isinstance(buf, str) or 0 == len(buf):
+    if not isinstance(buf, (str, unicode)) or 0 == len(buf):
         return (1, "error buf")
 
     logging.debug("start write buf `%s` to `%s`", buf, sock)

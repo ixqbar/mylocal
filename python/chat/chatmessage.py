@@ -333,11 +333,10 @@ class ChatMessage(object):
                 "type"     : "notice",
                 "result"   : "ok",
                 "msg_type" : notice_message["type"],
-                }
+            }
 
             self.process_write_message(client_socket, 'rep ' + json.dumps(response_message))
             for conn in self.conns.values():
-                print conn
                 if conn['uid'].count("system") \
                     or conn['gid'] != int(notice_message['guild']) \
                     or conn['uid'] == str(notice_message['exclude']):
