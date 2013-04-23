@@ -399,6 +399,16 @@ class ChatMessage(object):
             self.process_write_message(client_socket, 'rep ' + error_response_message)
             return ("error chat message uid", False)
 
+        if 0 == sender_client_gid and 2 == int(chat_message['type']) and 0 == sender_client_uid.count("system"):
+            error_response_message = json.dumps({
+                "type"     : "chat",
+                "result"   : "err",
+                "msg_type" : chat_message["type"],
+                "msg"      : "error to fix gid"
+            })
+            self.process_write_message(client_socket, 'rep ' + error_response_message)
+            return ("error chat message uid", False)
+
         if int(chat_message["type"]) in (1, 2):
             response_message = json.dumps({
                 "type"     : "chat",
