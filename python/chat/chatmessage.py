@@ -203,7 +203,7 @@ class ChatMessage(object):
             return ("error login message sign", True)
 
         login_client_uid = str(login_message["uid"])
-        login_client_gid = int(login_message['gid']) if 'gid' in login_message else 0
+        login_client_gid = int(login_message['gid']) if 'gid' in login_message else -1
         login_client_fd  = client_socket.fileno()
         if login_client_uid in self.mapping:
             self.dis_connect(self.mapping[login_client_uid], "relogin")
@@ -385,7 +385,7 @@ class ChatMessage(object):
 
         sender_client_fileno = client_socket.fileno()
         sender_client_uid    = self.conns[sender_client_fileno].get("uid", None) if self.conns[sender_client_fileno] else None
-        sender_client_gid    = self.conns[sender_client_fileno].get("gid", 0) if self.conns[sender_client_fileno] else 0
+        sender_client_gid    = self.conns[sender_client_fileno].get("gid", -1) if self.conns[sender_client_fileno] else 0
         sender_client_player = self.player.get(sender_client_uid, None) if sender_client_uid else None
         if sender_client_uid is None or sender_client_player is None:
             logging.error("receive error uid chat message `%s`, %s, %d", message, client_socket, len(self.conns))
@@ -398,7 +398,7 @@ class ChatMessage(object):
             self.process_write_message(client_socket, 'rep ' + error_response_message)
             return ("error chat message uid", False)
 
-        if 0 == sender_client_gid and 2 == int(chat_message['type']) and 0 == sender_client_uid.count("system"):
+        if sender_client_gid <= 0 and 2 == int(chat_message['type']) and 0 == sender_client_uid.count("system"):
             error_response_message = json.dumps({
                 "type"     : "chat",
                 "result"   : "err",
@@ -437,7 +437,7 @@ class ChatMessage(object):
 
                 logging.info("response chat message loop `%s`", conn)
                 self.process_write_message(conn["socket"], 'get_chat ' + response)
-            self.add_history(response_message, 0, sender_gid if 2 == chat_message['type'] else 0)
+            self.add_history(response_message, 0, sender_gid if sender_gid > 0 and 2 == chat_message['type'] else 0)
         else:
             target_client_uid = str(chat_message["target"]) if chat_message["target"] else None
             if  target_client_uid is not None and target_client_uid in self.player and target_client_uid in self.mapping:
