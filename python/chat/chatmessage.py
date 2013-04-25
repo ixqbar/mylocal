@@ -334,7 +334,6 @@ class ChatMessage(object):
                 "result"   : "ok",
                 "msg_type" : notice_message["type"],
             }
-
             self.process_write_message(client_socket, 'rep ' + json.dumps(response_message))
             for conn in self.conns.values():
                 if conn['uid'].count("system") \
@@ -347,6 +346,12 @@ class ChatMessage(object):
         elif int(notice_message['type']) == 1:
             target_client_uid = str(notice_message["target"]) if notice_message["target"] else None
             if  target_client_uid is not None and target_client_uid in self.player and target_client_uid in self.mapping:
+                response_message = {
+                    "type"     : "notice",
+                    "result"   : "ok",
+                    "msg_type" : notice_message["type"],
+                }
+                self.process_write_message(client_socket, 'rep ' + json.dumps(response_message))
                 logging.info("response notice message to target %s", self.mapping[target_client_uid])
                 self.process_write_message(self.mapping[target_client_uid], 'get_message ' + notice_message['msg'])
             else:
