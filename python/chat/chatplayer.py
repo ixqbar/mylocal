@@ -10,7 +10,7 @@ class ChatPlayer(object):
         self.first_name = ""
         self.last_name  = ""
         self.level      = 0
-        self.gid        = 0
+        self.gid        = -1
 
     def __str__(self):
         return '{"uid":"%s","first":"%s","last":"%s","level":"%s","gid":"%s"}' \

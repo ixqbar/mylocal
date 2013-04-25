@@ -56,7 +56,7 @@ class ChatMessage(object):
         return self.channel_history['public']
 
     def get_guild_history(self, guild_id):
-        return self.channel_history['guild'][guild_id] if guild_id and guild_id in self.channel_history['guild'] else []
+        return self.channel_history['guild'][guild_id] if guild_id > 0 and guild_id in self.channel_history['guild'] else []
 
     def get_whisper_history(self, target):
         return self.whisper_history[target] if target in self.whisper_history else []
@@ -252,7 +252,7 @@ class ChatMessage(object):
                     and self.conns[target_client_socket_fd] is not None \
                     and int(update_message['gid']) != self.conns[target_client_socket_fd]['gid']:
                     self.conns[target_client_socket_fd]["gid"] = int(update_message['gid'])
-                    if int(update_message['gid']):
+                    if int(update_message['gid']) > 0:
                         push_guild_history = self.get_guild_history(int(update_message['gid']))
                 ##
                 response_message = {
@@ -423,6 +423,7 @@ class ChatMessage(object):
                 "level"    : sender_client_player.level,
                 "first"    : sender_client_player.first_name,
                 "last"     : sender_client_player.last_name,
+                "gid"      : sender_client_player.gid,
                 "msg"      : chat_message["msg"],
                 "add_time" : chatutil.get_format_time()
             }
@@ -454,6 +455,7 @@ class ChatMessage(object):
                     "level"    : sender_client_player.level,
                     "first"    : sender_client_player.first_name,
                     "last"     : sender_client_player.last_name,
+                    "gid"      : sender_client_player.gid,
                     "msg"      : chat_message["msg"],
                     "add_time" : chatutil.get_format_time()
                 }
