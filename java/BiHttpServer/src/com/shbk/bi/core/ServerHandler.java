@@ -20,7 +20,7 @@ public class ServerHandler implements Handler {
         }  
           
         SelectionKey clientKey = null;  
-        try {  
+        try { 
             client.configureBlocking(false);  
             clientKey = client.register(selector, SelectionKey.OP_READ);  
             clientKey.attach(new ClientHandler());  
