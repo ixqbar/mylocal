@@ -15,7 +15,7 @@ public class ServerHandler implements Handler {
         try {  
             client = server.accept();  
         } catch (IOException e) {  
-            e.printStackTrace();  
+            Logger.except(e);
             return;  
         }  
           
@@ -28,7 +28,7 @@ public class ServerHandler implements Handler {
         	if (null != clientKey) {
         		clientKey.cancel();
         	}
-            try { client.close(); } catch (IOException ioe) { }  
+            try { client.close(); } catch (IOException ioe) { Logger.except(ioe); }  
         } 
 	}
 
