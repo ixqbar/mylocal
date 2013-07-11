@@ -6,9 +6,11 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
+import com.shbk.bi.HttpServer;
+
 public class ClientHandler implements Handler {
 	
-	private ByteBuffer buffer;  
+	private ByteBuffer buffer; 
     
     public ClientHandler() {  
         buffer = ByteBuffer.allocate(2048);  
@@ -116,6 +118,8 @@ public class ClientHandler implements Handler {
         } else {
         	response_data = "ERROR";
 		}
+        
+        HttpServer.queue.add(request_uri);
         
         String response_header = String.format("HTTP/1.1 200OK\r\nContent-Type:text/html; charset=utf-8\r\nContent-Length: %d\r\n\r\n%s", response_data.length(), response_data); 
         
