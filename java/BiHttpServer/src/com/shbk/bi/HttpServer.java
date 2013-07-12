@@ -18,7 +18,7 @@ public class HttpServer {
 	public void run() {
 		try {
 			pool.submit(new LogSeller(HttpServer.queue));
-			pool.submit(new TcpServer(8080));
+			pool.submit(new TcpServer(LogConfig.get("address").toString(), Integer.parseInt(LogConfig.get("port").toString())));
 		} catch (Exception e) {
 			pool.shutdown();
 		}
