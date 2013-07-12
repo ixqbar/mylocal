@@ -75,7 +75,7 @@ public class LogSeller implements Runnable {
 				this.biLogRecordInfo.put("index", Integer.parseInt(this.biLogRecordInfo.get("index").toString()) + 1);
 				this.biLogRecordInfo.put("num", 0);
 				if (LogConfig.get("biLogCompress").toString().equals("1")) {
-					LogUtil.gzcompress(new File(this.biLogRecordInfo.get("file").toString()), Boolean.valueOf(LogConfig.get("delBiLogFileAfterCompress").toString()));
+					LogUtil.gzcompress(new File(this.biLogRecordInfo.get("file").toString()), LogConfig.get("delBiLogFileAfterCompress").toString().equals("1"));
 				}
 				this.biLogFileWriterHandle = this.getLogFileWriter("bi");
 			}
@@ -88,9 +88,9 @@ public class LogSeller implements Runnable {
 				this.httpLogRecordInfo.put("index", Integer.parseInt(this.httpLogRecordInfo.get("index").toString()) + 1);
 				this.httpLogRecordInfo.put("num", 0);
 				if (LogConfig.get("httpLogCompress").toString().equals("1")) {
-					LogUtil.gzcompress(new File(this.httpLogRecordInfo.get("file").toString()), Boolean.valueOf(LogConfig.get("delHttpLogFileAfterCompress").toString()));
+					LogUtil.gzcompress(new File(this.httpLogRecordInfo.get("file").toString()), LogConfig.get("delHttpLogFileAfterCompress").toString().equals("1"));
 				}
-				this.httpLogFileWriterHandle = this.getLogFileWriter("bi");
+				this.httpLogFileWriterHandle = this.getLogFileWriter("http");
 			}
 			this.httpLogFileWriterHandle.write(String.format("%s|%s\n", logMessage.get("date"), logMessage.get("message")));
 			this.httpLogFileWriterHandle.flush();
