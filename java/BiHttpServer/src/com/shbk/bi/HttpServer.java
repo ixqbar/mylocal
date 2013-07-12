@@ -29,27 +29,34 @@ public class HttpServer {
 	 * 
 	 */
 	public static void main(String[] args) throws IOException {
-		if (args.length == 4) {
+		if (args.length >= 4) {
 			LogConfig.set("address",     args[0]);
 			LogConfig.set("port",        Integer.parseInt(args[1]));
 			LogConfig.set("biLogPath",   '/' == args[2].charAt(args[2].length() - 1) ? args[2].substring(0, args[2].length() - 1) : args[2]);
 			LogConfig.set("httpLogPath", '/' == args[3].charAt(args[3].length() - 1) ? args[3].substring(0, args[3].length() - 1) : args[3]);
 			LogConfig.set("isDebug",     0);			
 		} else {	
-			LogConfig.set("address",     "0.0.0.0");
-			LogConfig.set("port",        8080);
-			LogConfig.set("biLogPath",   System.getProperty("user.dir") + "/biLogs");
-			LogConfig.set("httpLogPath", System.getProperty("user.dir") + "/httpLogs");
-			LogConfig.set("isDebug",     1);			
+			System.err.println("You can usage like java -jar HttpServer.jar address port biLogPath httpLogPath [biLogToCompress, httpLogToCompress, delBiLogAfterCompress, delHttpLogAfterCompress]");
+			System.err.println("Detail:");
+			System.err.println("\taddress                 like 127.0.0.1");
+			System.err.println("\tprot                    like 8080");
+			System.err.println("\tbiLogPath               like /data/logs/bi");
+			System.err.println("\thttpLogPath             like /data/logs/http");
+			System.err.println("\tbiLogToCompress         like 0 or 1 default 1");
+			System.err.println("\thttpLogTocompress       like 0 or 1 default 0");
+			System.err.println("\tdelBiLogAfterCompress   like 0 or 1 default 1");
+			System.err.println("\tdelHttpLogAfterCompress like 0 or 1 default 0");
+			return;			
 		}
 		
 		LogConfig.set("biPerLogMaxNum",   10000);
 		LogConfig.set("httpPerLogMaxNum", 10000);
 		
-		LogConfig.set("biLogCompress", 1);
-		LogConfig.set("delBiLogFileAfterCompress", 0);
-		LogConfig.set("httpLogCompress", 0);
-		LogConfig.set("delHttpLogFileAfterCompress", 0);
+		LogConfig.set("biLogCompress",   args.length >= 5 ? Integer.parseInt(args[4]) : 1);		
+		LogConfig.set("httpLogCompress", args.length >= 6 ? Integer.parseInt(args[5]) : 0);
+		
+		LogConfig.set("delBiLogFileAfterCompress",   args.length >= 7 ? Integer.parseInt(args[6]) : 1);
+		LogConfig.set("delHttpLogFileAfterCompress", args.length >= 8 ? Integer.parseInt(args[7]) : 0);
 		
 		try {
 			java.io.File biLogFolder = new java.io.File(LogConfig.get("biLogPath").toString());
