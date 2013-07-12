@@ -31,9 +31,9 @@ public class HttpServer {
 	public static void main(String[] args) throws IOException {
 		if (args.length == 4) {
 			LogConfig.set("address",     args[0]);
-			LogConfig.set("port",        args[1]);
-			LogConfig.set("biLogPath",   '/' == args[2].charAt(-1) ? args[2].substring(0, -1) : args[2]);
-			LogConfig.set("httpLogPath", '/' == args[3].charAt(-1) ? args[2].substring(0, -1) : args[2]);
+			LogConfig.set("port",        Integer.parseInt(args[1]));
+			LogConfig.set("biLogPath",   '/' == args[2].charAt(args[2].length() - 1) ? args[2].substring(0, args[2].length() - 1) : args[2]);
+			LogConfig.set("httpLogPath", '/' == args[3].charAt(args[3].length() - 1) ? args[3].substring(0, args[3].length() - 1) : args[3]);
 			LogConfig.set("isDebug",     0);			
 		} else {	
 			LogConfig.set("address",     "0.0.0.0");
