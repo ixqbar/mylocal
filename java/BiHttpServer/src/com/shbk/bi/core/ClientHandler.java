@@ -114,12 +114,16 @@ public class ClientHandler implements Handler {
         
         String response_data   = "";
         if (request_method.equals("POST") || request_method.equals("GET")) {
-        	response_data = String.format("nmethod=%s<br>uri=%s<br>data=%s", request_method, request_uri, request_data);
+        	if (null == LogConfig.get("isDebug") || LogConfig.get("isDebug").toString().equals("1")) {
+        		response_data = String.format("nmethod=%s<br>uri=%s<br>data=%s", request_method, request_uri, request_data);
+        	} else {
+        		response_data = "OK";
+        	}
         } else {
         	response_data = "ERROR";
 		}
         
-        HttpServer.queue.add(request_uri);
+        Logger.bi(request_uri);
         
         String response_header = String.format("HTTP/1.1 200OK\r\nContent-Type:text/html; charset=utf-8\r\nContent-Length: %d\r\n\r\n%s", response_data.length(), response_data); 
         
