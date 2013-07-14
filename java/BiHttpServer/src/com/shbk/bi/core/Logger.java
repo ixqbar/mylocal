@@ -5,8 +5,10 @@ import com.shbk.bi.HttpServer;
 
 public class Logger {
 	
+	private static final boolean serverLogToFile = null != LogConfig.get("serverLogToFile") && LogConfig.get("serverLogToFile").toString().equals("1");
+	
 	public static void debug(String message) {
-		if (null == LogConfig.get("isDebug") || LogConfig.get("isDebug").toString().equals("1")) {
+		if (false == serverLogToFile) {
 			System.out.println(message);
 		} else {
 			Logger.log("debug", message);
@@ -14,7 +16,7 @@ public class Logger {
 	}
 	
 	public static void debug(String format, Object ... args) {
-		if (null == LogConfig.get("isDebug") || LogConfig.get("isDebug").toString().equals("1")) {
+		if (false == serverLogToFile) {
 			System.out.println(String.format(format, args));
 		} else {
 			Logger.log("debug", String.format(format, args));
@@ -22,7 +24,7 @@ public class Logger {
 	}
 	
 	public static void info(String message) {
-		if (null == LogConfig.get("isDebug") || LogConfig.get("isDebug").toString().equals("1")) {
+		if (false == serverLogToFile) {
 			System.out.println(message);
 		} else {
 			Logger.log("info", message);
@@ -30,7 +32,7 @@ public class Logger {
 	}
 	
 	public static void info(String format, Object ... args) {
-		if (null == LogConfig.get("isDebug") || LogConfig.get("isDebug").toString().equals("1")) {
+		if (false == serverLogToFile) {
 			System.out.println(String.format(format, args));
 		} else {
 			Logger.log("info", String.format(format, args));
@@ -38,7 +40,7 @@ public class Logger {
 	}
 	
 	public static void except(Exception e) {
-		if (null == LogConfig.get("isDebug") || LogConfig.get("isDebug").toString().equals("1")) {
+		if (false == serverLogToFile) {
 			System.out.println(e);
 		} else {
 			Logger.log("info", e.getMessage());

@@ -30,13 +30,13 @@ public class LogSeller implements Runnable {
 	private FileWriter getLogFileWriter(String type) throws IOException {
 		String httpLogFile;
 		if (type.equals("http")) {
-			httpLogFile = String.format("%s/%s_%d.log",
+			httpLogFile = String.format("%s/access_%s_%d.log",
 					LogConfig.get("httpLogPath"),
 					LogUtil.getFormatDate("yyyy-MM-dd"),
 					this.httpLogRecordInfo.get("index"));
 			this.httpLogRecordInfo.put("file", httpLogFile);
 		} else { 
-			httpLogFile = String.format("%s/%s_%d.log",
+			httpLogFile = String.format("%s/http_%s_%d.log",
 					LogConfig.get("biLogPath"),
 					LogUtil.getFormatDate("yyyy-MM-dd"),
 					this.biLogRecordInfo.get("index"));
@@ -71,10 +71,10 @@ public class LogSeller implements Runnable {
 		HashMap<String, String> logMessage = (HashMap<String, String>)log;
 		if (logMessage.get("type").equals("bi")) {
 			if (false == this.logRecordDate.equals(LogUtil.getFormatDate("yyyy-MM-dd")) 
-					|| Integer.parseInt(this.biLogRecordInfo.get("num").toString()) > Integer.parseInt(LogConfig.get("biPerLogMaxNum").toString())) {
+					|| Integer.parseInt(this.biLogRecordInfo.get("num").toString()) >= Integer.parseInt(LogConfig.get("biPerLogMaxNum").toString())) {
 				this.biLogRecordInfo.put("index", Integer.parseInt(this.biLogRecordInfo.get("index").toString()) + 1);
 				this.biLogRecordInfo.put("num", 0);
-				if (LogConfig.get("biLogCompress").toString().equals("1")) {
+				if (LogConfig.get("biLogToCompress").toString().equals("1")) {
 					LogUtil.gzcompress(new File(this.biLogRecordInfo.get("file").toString()), LogConfig.get("delBiLogFileAfterCompress").toString().equals("1"));
 				}
 				this.biLogFileWriterHandle = this.getLogFileWriter("bi");
@@ -84,10 +84,10 @@ public class LogSeller implements Runnable {
 			this.biLogRecordInfo.put("num", Integer.parseInt(this.biLogRecordInfo.get("num").toString()) + 1);
 		} else {
 			if (false == this.logRecordDate.equals(LogUtil.getFormatDate("yyyy-MM-dd")) 
-					|| Integer.parseInt(this.httpLogRecordInfo.get("num").toString()) > Integer.parseInt(LogConfig.get("httpPerLogMaxNum").toString())) {
+					|| Integer.parseInt(this.httpLogRecordInfo.get("num").toString()) >= Integer.parseInt(LogConfig.get("httpPerLogMaxNum").toString())) {
 				this.httpLogRecordInfo.put("index", Integer.parseInt(this.httpLogRecordInfo.get("index").toString()) + 1);
 				this.httpLogRecordInfo.put("num", 0);
-				if (LogConfig.get("httpLogCompress").toString().equals("1")) {
+				if (LogConfig.get("httpLogToCompress").toString().equals("1")) {
 					LogUtil.gzcompress(new File(this.httpLogRecordInfo.get("file").toString()), LogConfig.get("delHttpLogFileAfterCompress").toString().equals("1"));
 				}
 				this.httpLogFileWriterHandle = this.getLogFileWriter("http");

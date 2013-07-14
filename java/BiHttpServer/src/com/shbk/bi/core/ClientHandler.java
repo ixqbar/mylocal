@@ -6,8 +6,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
-import com.shbk.bi.HttpServer;
-
 public class ClientHandler implements Handler {
 	
 	private ByteBuffer buffer; 
@@ -46,12 +44,12 @@ public class ClientHandler implements Handler {
         } while (true);
                        
         if (0 == n) {
-        	Logger.info("close|%s", client.getRemoteAddress());
+        	Logger.info("close|%s", client.socket().getRemoteSocketAddress());
         	client.close();
         	return;
         }
         
-        Logger.info("connect|%s", client.getRemoteAddress());
+        Logger.info("connect|%s", client.socket().getRemoteSocketAddress());
         
         buffer.flip();        
         byte[] pack = new byte[n];
@@ -112,18 +110,14 @@ public class ClientHandler implements Handler {
             }            
         }
         
-        String response_data   = "";
+        String response_data = "";
         if (request_method.equals("POST") || request_method.equals("GET")) {
-        	if (null == LogConfig.get("isDebug") || LogConfig.get("isDebug").toString().equals("1")) {
-        		response_data = String.format("nmethod=%s<br>uri=%s<br>data=%s", request_method, request_uri, request_data);
-        	} else {
-        		response_data = "OK";
-        	}
+        	response_data = "OK";
         } else {
         	response_data = "ERROR";
 		}
         
-        Logger.bi(request_uri);
+        Logger.bi(String.format("uri=%s,data=%s", request_uri, request_data));
         
         String response_header = String.format("HTTP/1.1 200OK\r\nContent-Type:text/html; charset=utf-8\r\nContent-Length: %d\r\n\r\n%s", response_data.length(), response_data); 
         
@@ -137,7 +131,9 @@ public class ClientHandler implements Handler {
     private void handleWrite(Selector selector, SelectionKey key) throws IOException {  
         SocketChannel client = (SocketChannel) key.channel();
         buffer.flip();
-        client.write(buffer);  
+        while (buffer.hasRemaining()) {
+        	client.write(buffer);  
+        }
         client.close();
         buffer.clear();
     }  
