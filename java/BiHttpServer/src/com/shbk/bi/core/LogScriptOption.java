@@ -6,7 +6,7 @@ public class LogScriptOption {
 		System.err.println("You can usage like java -jar HttpServer.jar Options");
 		System.err.println("Options Detail:");
 		System.err.println("\t--address                 default 0.0.0.0");
-		System.err.println("\t--port                    default 8080");
+		System.err.println("\t--port                    default 2011");
 		System.err.println("\t--biLogPath               default /var/logs");
 		System.err.println("\t--httpLogPath             default /var/logs");
 		System.err.println("\t--biLogToCompress         like 0 or 1 default 1");
