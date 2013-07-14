@@ -34,8 +34,8 @@ public class HttpServer {
 			return;
 		}
 				
-		System.out.printf("%s|info|address=%s,port=%d,logPath=%s\n", LogUtil.getFormatDate(), LogConfig.get("address"), LogConfig.get("port"), LogConfig.get("logPath"));		
-		System.out.printf("%s|info|server start running\n", LogUtil.getFormatDate());
+		Logger.info("address=%s,port=%d,biLogPath=%s,httpLogPath=%s", LogConfig.get("address"), LogConfig.get("port"), LogConfig.get("biLogPath"), LogConfig.get("httpLogPath"));		
+		Logger.info("server start running");
 		new HttpServer().run();
 	}
 
