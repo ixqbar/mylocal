@@ -29,7 +29,6 @@ public class HttpServer {
 	 * 
 	 */
 	public static void main(String[] args) throws IOException {
-		//参数解析
 		if (false == LogScriptOption.parseOption(args)) {
 			return;
 		}

@@ -8,6 +8,7 @@ import java.nio.channels.SocketChannel;
 
 public class ServerHandler implements Handler {
 
+	@SuppressWarnings("unused")
 	@Override
 	public void execute(Selector selector, SelectionKey key) throws IOException {
 		ServerSocketChannel server = (ServerSocketChannel) key.channel();  

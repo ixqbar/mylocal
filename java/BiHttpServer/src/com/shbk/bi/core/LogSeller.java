@@ -62,6 +62,7 @@ public class LogSeller implements Runnable {
         }  		
 	}
 	
+	@SuppressWarnings("unchecked")
 	private void writeLog() throws InterruptedException, IOException {
 		Object log = this.queue.poll();
 		if (null == log) {
