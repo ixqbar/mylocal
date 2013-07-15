@@ -3,7 +3,7 @@
 #You can usage like java -jar HttpServer.jar Options
 #Options Detail:
 #	--address                 default 0.0.0.0
-#	--port                    default 8080
+#	--port                    default 2011
 #	--biLogPath               default /var/logs
 #	--httpLogPath             default /var/logs
 #	--biLogToCompress         like 0 or 1 default 1
