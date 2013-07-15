@@ -77,6 +77,8 @@ public class LogScriptOption {
 						LogConfig.set("httpPerLogMaxNum", Integer.parseInt(tmp[1]));
 					} else if (tmp[0].equals("--serverLogToFile")) {
 						LogConfig.set("serverLogToFile", Integer.parseInt(tmp[1]));
+					} else if (tmp[0].equals("--timeZone")) {
+						LogConfig.set("timeZone", tmp[1]);
 					} else if (tmp[0].equals("--help")) {
 						return LogScriptOption.showUsage();
 					} else {
@@ -131,6 +133,10 @@ public class LogScriptOption {
 		if (Integer.parseInt(LogConfig.get("serverLogToFile").toString()) != 0 
 				&& Integer.parseInt(LogConfig.get("serverLogToFile").toString()) != 1) {
 			return LogScriptOption.errorOptionValue("--serverLogToFile", LogConfig.get("serverLogToFile").toString());
+		}
+		
+		if (0 == LogConfig.get("timeZone").toString().length()) {
+			return LogScriptOption.errorOptionValue("--timeZone", LogConfig.get("timeZone").toString());
 		}
 		
 		try {
