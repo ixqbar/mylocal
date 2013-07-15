@@ -16,6 +16,7 @@ public class LogScriptOption {
 		System.err.println("\t--biPerLogMaxNum          default 10000");
 		System.err.println("\t--httpPerLogMaxNum        default 10000");
 		System.err.println("\t--serverLogToFile         default 0");
+		System.err.println("\t--timeZone                default Asia/Shanghai");
 		
 		return false;
 	}
@@ -47,6 +48,7 @@ public class LogScriptOption {
 		LogConfig.set("biPerLogMaxNum",              10000);
 		LogConfig.set("httpPerLogMaxNum",            10000);
 		LogConfig.set("serverLogToFile",             0);
+		LogConfig.set("timeZone",                    "Asia/Shanghai");
 		//参数解析
 		if (args.length > 0) {
 			String[] tmp;

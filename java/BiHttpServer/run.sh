@@ -13,5 +13,6 @@
 #	--biPerLogMaxNum          default 10000
 #	--httpPerLogMaxNum        default 10000
 #	--serverLogToFile         default 0
+#   --timeZone                default Asia/Shanghai
 #	
-java -jar HttpServer.jar --address=127.0.0.1 --port=8080 --biLogPath=/Users/venkman/Desktop/HttpServer/logs --httpLogPath=/Users/venkman/Desktop/HttpServer/logs
+java -jar HttpServer.jar --address=127.0.0.1 --port=2011 --biLogPath=/home/venkman/desktop/httpserver/logs --httpLogPath=/home/venkman/desktop/httpserver/logs
