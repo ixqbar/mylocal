@@ -1,0 +1,35 @@
+/**
+ *
+ * @param string $clear_text
+ * @param string $key
+ * @return array
+ */
+public static function aes_encrypt($clear_text, $key) {
+    $cipher  = mcrypt_module_open(MCRYPT_RIJNDAEL_128, '', MCRYPT_MODE_CBC, '');
+    $iv_size = mcrypt_enc_get_iv_size($cipher);
+    $iv      = mcrypt_create_iv($iv_size, MCRYPT_RAND);
+    mcrypt_generic_init($cipher, $key, $iv);
+    $data    = mcrypt_generic($cipher, $clear_text);
+    mcrypt_generic_deinit($cipher);
+    mcrypt_module_close($cipher);
+
+    return array($iv, $data);
+}
+
+/**
+ *
+ * @param string $raw
+ * @param string $iv
+ * @param string $key
+ * @return array
+ */
+public static function aes_decrypt($raw, $iv, $key) {
+    $cipher = mcrypt_module_open(MCRYPT_RIJNDAEL_128, '', MCRYPT_MODE_CBC, '');
+    mcrypt_generic_init($cipher, $key, $iv);
+    $data   = mdecrypt_generic($cipher, $raw);
+    mcrypt_generic_deinit($cipher);
+    mcrypt_module_close($cipher);
+
+    return $data;
+}
+
