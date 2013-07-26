@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.lang.String;
 
@@ -57,7 +58,7 @@ public class ClientHandler implements Handler {
         byte[] pack = new byte[n];
         buffer.get(pack);
         
-        Logger.debug("header|total_length=%d|\n%s", n, new String(pack));
+        Logger.debug("header|total_length=%d|\n%s", n, new String(pack, "UTF-8"));
         
         String clientRequestMethod = "";
         String clientRequestUri    = "";
@@ -72,7 +73,7 @@ public class ClientHandler implements Handler {
                     && pack[last - 2] == (byte) 0x0A  
                     && pack[last - 3] == (byte) 0x0D) {
             	//GET
-            	String[] header     = (new String(pack)).split("\r\n"); 
+            	String[] header     = (new String(pack, "UTF-8")).split("\r\n"); 
             	clientRequestMethod = "GET";            	
             	clientRequestUri    = header[0].substring(5, header[0].length() - 9);
             }
@@ -95,7 +96,7 @@ public class ClientHandler implements Handler {
             if (eofp > 0) {
             	int tmp_data_length = n - eofp;
             	int data_length = 0;
-            	String[] header = (new String(pack, 0, eofp - 4)).split("\r\n");            	
+            	String[] header = (new String(pack, 0, eofp - 4, "UTF-8")).split("\r\n");            	
             	for (String txt : header) {
             		if (txt.contains("Content-Length:")) {
             			Logger.debug("content_length_text|%s", txt);
@@ -107,7 +108,7 @@ public class ClientHandler implements Handler {
             	if (data_length == tmp_data_length) {
             		clientRequestMethod = "POST";
             		clientRequestUri    = header[0].substring(5, header[0].length() - 9);
-            		clientRequestData   = new String(pack, eofp, data_length);
+            		clientRequestData   = new String(pack, eofp, data_length, "UTF-8");
             	}
             }            
         }
@@ -178,6 +179,7 @@ public class ClientHandler implements Handler {
     }
     
     private Boolean formatBiRequestData(HashMap<String, String> requestData) {
+    	Charset charset      = Charset.forName("UTF-8");
     	ByteBuffer biLogData = ByteBuffer.allocate(2048);
     	//timestamp
     	biLogData.putInt(LogUtil.getTimestamp());
@@ -188,8 +190,8 @@ public class ClientHandler implements Handler {
     		biLogData.putInt(0);
     	}
     	//event
-    	if (null != requestData.get("event_id")) {
-    		biLogData.putInt(Integer.parseInt(requestData.get("event_id").toString()));
+    	if (null != requestData.get("event")) {
+    		biLogData.putInt(Integer.parseInt(requestData.get("event").toString()));
     	} else {
     		biLogData.putInt(-1);
     	}
@@ -204,48 +206,36 @@ public class ClientHandler implements Handler {
     	} else {
     		uid = String.format("%050d", 0);
     	}
-    	biLogData.put(uid.getBytes());
+    	biLogData.put(uid.getBytes(charset));
     	
-    	//
-    	short datalen = 0;        	
-    	datalen += null != requestData.get("p0") ? requestData.get("p0").length() : 0;
-    	datalen += null != requestData.get("p1") ? requestData.get("p1").length() : 0;
-    	datalen += null != requestData.get("p2") ? requestData.get("p2").length() : 0;
-    	datalen += null != requestData.get("p3") ? requestData.get("p3").length() : 0;
-    	datalen += null != requestData.get("p4") ? requestData.get("p4").length() : 0;
-    	datalen += null != requestData.get("p5") ? requestData.get("p5").length() : 0;        	
+    	//p1->p16
+    	short datalen  = 0;
+    	String[] params = {"p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10"};
+    	
+    	for (String p : params) {
+    		datalen += null != requestData.get(p) ? requestData.get(p).length() : 0;
+		}    	
     	biLogData.putShort(datalen);
     	
-    	biLogData.putShort(null != requestData.get("p0") ? (short)(requestData.get("p0").length()) : 0);
-    	biLogData.putShort(null != requestData.get("p1") ? (short)(requestData.get("p1").length()) : 0);
-    	biLogData.putShort(null != requestData.get("p2") ? (short)(requestData.get("p2").length()) : 0);
-    	biLogData.putShort(null != requestData.get("p3") ? (short)(requestData.get("p3").length()) : 0);
-    	biLogData.putShort(null != requestData.get("p4") ? (short)(requestData.get("p4").length()) : 0);
-    	biLogData.putShort(null != requestData.get("p5") ? (short)(requestData.get("p5").length()) : 0);
-    	if (null != requestData.get("p0")) {
-    		biLogData.put(requestData.get("p0").toString().getBytes());
-    	}
-    	if (null != requestData.get("p1")) {
-    		biLogData.put(requestData.get("p1").toString().getBytes());
-    	}
-    	if (null != requestData.get("p2")) {
-    		biLogData.put(requestData.get("p2").toString().getBytes());
-    	}
-    	if (null != requestData.get("p3")) {
-    		biLogData.put(requestData.get("p3").toString().getBytes());
-    	}
-    	if (null != requestData.get("p4")) {
-    		biLogData.put(requestData.get("p4").toString().getBytes());
-    	}
-    	if (null != requestData.get("p5")) {
-    		biLogData.put(requestData.get("p5").toString().getBytes());
+    	for (String p : params) {
+    		biLogData.putShort(null != requestData.get(p) ? (short)(requestData.get(p).length()) : 0);
     	}
     	
+    	for (String p : params) {
+	    	if (null != requestData.get(p)) {
+	    		biLogData.put(requestData.get(p).toString().getBytes(charset));
+	    	}
+    	}
+    	
+    	//endl
     	biLogData.put("\n".getBytes());
     	
+    	//write to bi
     	biLogData.flip(); 
     	byte[] logContent = new byte[biLogData.limit()];
     	biLogData.get(logContent);
+    	biLogData.clear();
+    	
     	Logger.bi(null != requestData.get("time") ? Integer.parseInt(requestData.get("time")) : LogUtil.getTimestamp(), logContent);
     	
     	return true;
