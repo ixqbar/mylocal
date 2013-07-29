@@ -117,7 +117,7 @@ public class LogSeller implements Runnable {
 			if (this.biLogNum >= Integer.parseInt(LogConfig.get("biPerLogMaxNum").toString())
 					|| this.biLogStartTimestamp + this.biLogMaxInterval <= LogUtil.getTimestamp()) {
 				if (false == flushLog) {
-					this.httpLogFileWriterHandle.flush();
+					this.biLogFileWriterHandle.flush();
 				}
 				
 				String biLogIndexFileContent = "";
