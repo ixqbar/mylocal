@@ -45,7 +45,7 @@ public class TcpServer implements Runnable {
 		            itor.remove();
 		            
 		            Handler handler = (Handler) key.attachment();  
-		            handler.execute(selector, key);  
+		            handler.execute(selector, key);
 		        }  
 		    }
 		} catch (IOException e) {

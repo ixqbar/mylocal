@@ -60,11 +60,13 @@ public class LogSeller implements Runnable {
 	}
 		
 	@Override
-	public void run() {		
+	public void run() {
+		int queueSize;
 		try { 
             while (true) {
-            	if (this.queue.size() > 0) {
-            		writeLog();  
+            	queueSize = this.queue.size();
+            	if (queueSize > 0) {
+            		writeLog();
             	} else if (false == HttpServer.isStoped) {
             		Thread.sleep(3000);
             	} else {
