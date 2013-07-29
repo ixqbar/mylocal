@@ -114,7 +114,7 @@ public class Logger {
 			e.printStackTrace();
 		} else {
 			StackTraceElement [] exceptionMessage = e.getStackTrace();
-			for (int i = 0, len = exceptionMessage.length; i < len; i++) {
+			for (int i = 0, len = exceptionMessage.length; i < len; ++i) {
 				Logger.log("except", exceptionMessage[i].toString());
 			}
 		}

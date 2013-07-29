@@ -42,7 +42,7 @@ public class Md5 {
 	private static String bufferToHex(byte bytes[], int m, int n) {
 	   StringBuffer stringbuffer = new StringBuffer(2 * n);
 	   int k = m + n;
-	   for (int l = m; l < k; l++) {
+	   for (int l = m; l < k; ++l) {
 		   appendHexPair(bytes[l], stringbuffer);
 	   }
 	   

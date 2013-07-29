@@ -19,6 +19,7 @@ public class LogScriptOption {
 		System.err.println("\t--httpLogTocompress       like 0 or 1 default 0");
 		System.err.println("\t--delBiLogAfterCompress   like 0 or 1 default 1");
 		System.err.println("\t--delHttpLogAfterCompress like 0 or 1 default 0");
+		System.err.println("\t--logFlushToFilePerNum    default 100");
 		System.err.println("\t--biLogMaxInterval        default 3600");
 		System.err.println("\t--biPerLogMaxNum          default 10000");
 		System.err.println("\t--httpPerLogMaxNum        default 10000");
@@ -56,6 +57,7 @@ public class LogScriptOption {
 		LogConfig.set("httpLogToCompress",           0);
 		LogConfig.set("delBiLogFileAfterCompress",   1);
 		LogConfig.set("delHttpLogFileAfterCompress", 0);
+		LogConfig.set("logFlushToFilePerNum",        100);
 		LogConfig.set("biLogMaxInterval",            3600);
 		LogConfig.set("biPerLogMaxNum",              10000);
 		LogConfig.set("httpPerLogMaxNum",            10000);
@@ -69,7 +71,7 @@ public class LogScriptOption {
 		//参数解析
 		if (args.length > 0) {
 			String[] tmp;
-			for (int i = 0, l = args.length; i < l; i++) {
+			for (int i = 0, l = args.length; i < l; ++i) {
 				tmp = args[i].split("=", 2);
 				if (2 == tmp.length && tmp[0].length() > 0 && tmp[1].length() > 0) {
 					if (tmp[0].equals("--address")) {
@@ -94,6 +96,8 @@ public class LogScriptOption {
 						LogConfig.set("delBiLogFileAfterCompress", Integer.parseInt(tmp[1]));
 					} else if (tmp[0].equals("--delHttpLogFileAfterCompress")) {
 						LogConfig.set("delHttpLogFileAfterCompress", Integer.parseInt(tmp[1]));
+					} else if (tmp[0].equals("--logFlushToFilePerNum")) {
+						LogConfig.set("logFlushToFilePerNum", Integer.parseInt(tmp[1]));
 					} else if (tmp[0].equals("--biLogMaxInterval")) {
 						LogConfig.set("biLogMaxInterval", Integer.parseInt(tmp[1]));
 					} else if (tmp[0].equals("--biPerLogMaxNum")) {
@@ -143,6 +147,10 @@ public class LogScriptOption {
 		
 		if (LogConfig.get("biLogIndexFile").toString().length() <= 0) {
 			return LogScriptOption.errorOptionValue("--biLogIndexFile", LogConfig.get("biLogIndexFile").toString());
+		}
+		
+		if (Integer.parseInt(LogConfig.get("logFlushToFilePerNum").toString()) <= 0) {
+			return LogScriptOption.errorOptionValue("--logFlushToFilePerNum", LogConfig.get("logFlushToFilePerNum").toString());
 		}
 		
 		if (Integer.parseInt(LogConfig.get("biLogToCompress").toString()) != 0 

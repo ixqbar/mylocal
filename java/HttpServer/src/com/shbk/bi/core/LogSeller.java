@@ -15,6 +15,7 @@ public class LogSeller implements Runnable {
 	
 	private final ConcurrentLinkedQueue<Object> queue;
 	
+	private int logFlushToFilePerNum;
 	private String httpLogFilePath;
 	private String biLogFilePath;
 	
@@ -34,14 +35,15 @@ public class LogSeller implements Runnable {
 	public LogSeller(ConcurrentLinkedQueue<Object> queue) throws IOException {
 		this.queue = queue;
 		
-		this.biLogNum            = 0;
-		this.biLogIndex          = Integer.parseInt(LogConfig.get("biLogIndex").toString());
-		this.biLogMaxInterval    = Integer.parseInt(LogConfig.get("biLogMaxInterval").toString());
-		this.biLogStartTimestamp = LogUtil.getTimestamp();
+		this.logFlushToFilePerNum = Integer.parseInt(LogConfig.get("logFlushToFilePerNum").toString());
+		this.biLogNum             = 0;
+		this.biLogIndex           = Integer.parseInt(LogConfig.get("biLogIndex").toString());
+		this.biLogMaxInterval     = Integer.parseInt(LogConfig.get("biLogMaxInterval").toString());
+		this.biLogStartTimestamp  = LogUtil.getTimestamp();
 		
-		this.httpLogNum          = 0;
-		this.httpLogIndex        = Integer.parseInt(LogConfig.get("httpLogIndex").toString());
-		this.httpLogRecordDate   = LogUtil.getFormatDate("yyyy-MM-dd");
+		this.httpLogNum           = 0;
+		this.httpLogIndex         = Integer.parseInt(LogConfig.get("httpLogIndex").toString());
+		this.httpLogRecordDate    = LogUtil.getFormatDate("yyyy-MM-dd");
 		
 		this.biLogFileWriterHandle      = this.getBiLogFileWriter();
 		this.httpLogFileWriterHandle    = this.getHttpLogFileWriter();
@@ -72,11 +74,19 @@ public class LogSeller implements Runnable {
             	} else {
             		break;
             	}
-            }  
+            }
         } catch (Exception e) {
         	Logger.except(e);
             cleanLogQueue();  
         }
+        
+        try {
+        	//flush
+            this.biLogFileWriterHandle.flush();
+            this.httpLogFileWriterHandle.flush();
+        } catch (Exception e) {
+			Logger.except(e);
+		}
 		
 		LogSeller.isStoped = true;
 		System.out.printf("%s|logseller stoped!!\n", LogUtil.getFormatDate());
@@ -88,19 +98,28 @@ public class LogSeller implements Runnable {
 			return;
 		}
 		
+		Boolean flushLog = false;
 		Boolean writeServerLogIndexToFile = false;
 		String logType = log.getClass().getSimpleName();
+		
 		if (false == logType.equals("String")) {
 			@SuppressWarnings("unchecked")
 			HashMap<String, Object> logContent = (HashMap<String, Object>)log;
 			//写入			
 			this.biLogFileWriterHandle.write((byte[])logContent.get("log"));
-			this.biLogFileWriterHandle.flush();
+			if (this.biLogNum > 0 && 0 == this.biLogNum % this.logFlushToFilePerNum) {
+				this.biLogFileWriterHandle.flush();
+				flushLog = true;
+			}
 			//增加LOG统计数量
 			this.biLogNum += 1;
 			//拆分,压缩
 			if (this.biLogNum >= Integer.parseInt(LogConfig.get("biPerLogMaxNum").toString())
 					|| this.biLogStartTimestamp + this.biLogMaxInterval <= LogUtil.getTimestamp()) {
+				if (false == flushLog) {
+					this.httpLogFileWriterHandle.flush();
+				}
+				
 				String biLogIndexFileContent = "";
 				//压缩
 				if (LogConfig.get("biLogToCompress").toString().equals("1")) {
@@ -145,12 +164,19 @@ public class LogSeller implements Runnable {
 		} else {
 			//写入LOG
 			this.httpLogFileWriterHandle.write((String)log);
-			this.httpLogFileWriterHandle.flush();
+			if (this.httpLogNum > 0 && 0 == this.httpLogNum % this.logFlushToFilePerNum) {
+				this.httpLogFileWriterHandle.flush();
+				flushLog = true;
+			}
 			//增加LOG统计数量
 			this.httpLogNum += 1;
 			//拆分,压缩
 			if (false == this.httpLogRecordDate.equals(LogUtil.getFormatDate("yyyy-MM-dd")) 
 					|| this.httpLogNum >= Integer.parseInt(LogConfig.get("httpPerLogMaxNum").toString())) {
+				if (false == flushLog) {
+					this.httpLogFileWriterHandle.flush();
+				}
+				
 				this.httpLogNum        = 0;
 				this.httpLogIndex     += 1;
 				this.httpLogRecordDate = LogUtil.getFormatDate("yyyy-MM-dd");
@@ -182,7 +208,7 @@ public class LogSeller implements Runnable {
         try {  
             while (this.queue.size() > 0) {  
             	writeLog();  
-            }  
+            }            
         }  catch (Exception e) {  
             Logger.except(e);  
         }  

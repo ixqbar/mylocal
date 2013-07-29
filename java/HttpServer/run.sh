@@ -13,6 +13,7 @@
 #	--httpLogTocompress       like 0 or 1 default 0
 #	--delBiLogAfterCompress   like 0 or 1 default 1
 #	--delHttpLogAfterCompress like 0 or 1 default 0
+#   --logFlushToFilePerNum    default 3600
 #	--biLogMaxInterval        default 3600
 #	--biPerLogMaxNum          default 10000
 #	--httpPerLogMaxNum        default 10000
