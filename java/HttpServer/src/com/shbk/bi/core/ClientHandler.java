@@ -227,9 +227,6 @@ public class ClientHandler implements Handler {
 	    	}
     	}
     	
-    	//endl
-    	biLogData.put("\n".getBytes());
-    	
     	//write to bi
     	biLogData.flip(); 
     	byte[] logContent = new byte[biLogData.limit()];
