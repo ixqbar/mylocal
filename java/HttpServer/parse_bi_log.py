@@ -1,4 +1,4 @@
-#!/bin/python
+#!/usr/bin/python
 #-*-coding:utf-8-*-
 
 import struct
@@ -9,11 +9,11 @@ import os
 def parse(bi_file):
     with open(bi_file) as file:
         while True:
-            line = file.readline().strip()
-            if not line:
+            data = file.read(84)
+            if not data or 0 == len(data) or len(data) != 84:
                 break
 
-            result = struct.unpack("!iii50shhhhhhhhhhh", line[0:84])
+            result = struct.unpack("!iii50shhhhhhhhhhh", data)
             bi = {
                 'server_timestamp' : result[0],
                 'request_timestamp': result[1],
@@ -22,10 +22,20 @@ def parse(bi_file):
                 'params'           : []
             }
 
-            offset = 84
+            if 0 == result[4]:
+                yield bi
+                continue
+
+
+            data = file.read(result[4])
+            if not data or len(data) == 0 or len(data) != result[4]:
+                yield bi
+                continue
+
+            offset = 0
             for p_len in result[5:]:
                 if p_len:
-                    p = (struct.unpack("%ds" % (p_len,), line[offset:offset + p_len]))
+                    p = (struct.unpack("%ds" % (p_len,), data[offset:offset + p_len]))
                     bi['params'].append(urllib.unquote(p[0]).decode('utf8'))
                     offset += p_len
                 else:
