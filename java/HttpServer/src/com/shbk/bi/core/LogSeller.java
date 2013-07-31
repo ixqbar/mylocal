@@ -204,7 +204,7 @@ public class LogSeller implements Runnable {
 		
 	private void cleanLogQueue() {  
         try {  
-            while (this.queue.size() > 0) {  
+            while (false == this.queue.isEmpty()) {  
             	writeLog();  
             }            
         }  catch (Exception e) {  
