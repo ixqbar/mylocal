@@ -37,10 +37,7 @@ public class ClientHandler implements Handler {
         int n = 0;
         do {
         	int m = client.read(buffer);
-        	if (-1 == m) {
-        		break;
-        	}
-        	if (0 == m) {
+        	if (m <= 0) {
         		break;
         	}
         	n += m;
