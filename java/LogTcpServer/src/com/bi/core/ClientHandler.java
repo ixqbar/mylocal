@@ -75,6 +75,7 @@ public class ClientHandler implements Handler {
         int dataLen = this.readBuffer.getInt();
         byte[] pack = new byte[dataLen];
         this.readBuffer.get(pack);
+        this.readBuffer.compact();
         
         String postData = new String(pack, "UTF-8");
         Logger.debug("receive data=%s", postData);
