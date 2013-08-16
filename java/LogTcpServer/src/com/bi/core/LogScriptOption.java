@@ -25,7 +25,7 @@ public class LogScriptOption {
 		System.err.println("\t--httpPerLogMaxNum        default 10000");
 		System.err.println("\t--serverLogToFile         default 0");
 		System.err.println("\t--timeZone                default Asia/Shanghai");
-		System.err.println("\t--httLogLevel             default all you can usage like debug,info,warn,error,except");
+		System.err.println("\t--httpLogLevel             default all you can usage like debug,info,warn,error,except");
 		
 		return false;
 	}
