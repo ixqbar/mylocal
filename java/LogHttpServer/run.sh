@@ -19,6 +19,6 @@
 #	--httpPerLogMaxNum        default 10000
 #	--serverLogToFile         default 0
 #	--timeZone                default Asia/Shanghai
-#	--httLogLevel             default all you can usage like debug,info,warn,error,except
+#	--httpLogLevel             default all you can usage like debug,info,warn,error,except
 
 java -jar LogHttpServer.jar --address=127.0.0.1 --port=2011 --biLogPath=/home/venkman/desktop/httpserver/logs --httpLogPath=/home/venkman/desktop/httpserver/logs --biLogIndexFile=/home/venkman/desktop/httpserver/biIndex.log --serverLogIndexFile=/home/venkman/desktop/httpserver/serverIndex.log --serverLogToFile=1
