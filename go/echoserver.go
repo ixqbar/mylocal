@@ -25,8 +25,7 @@ func main() {
     for {
         conn, err := lis.Accept()
         if err != nil {
-            fmt.Println("Error accepting client: ", err.Error())
-            os.Exit(0)
+            continue
         }
 
         go func(con net.Conn) {
