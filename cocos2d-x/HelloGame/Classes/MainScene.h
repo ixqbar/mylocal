@@ -6,6 +6,7 @@
 #include "cocos-ext.h"
 #include "JsonBox.h"
 #include "LSLog.h"
+#include "HelloWorldScene.h"
 
 USING_NS_CC;
 USING_NS_CC_EXT;
@@ -23,7 +24,16 @@ public:
     MainScene();
     ~MainScene();
     static CCScene* scene();
+    
     CCB_STATIC_NEW_AUTORELEASE_OBJECT_WITH_INIT_METHOD(MainScene, create);
+//    //step 1
+    bool init() {LOG_INFO("init"); CCLayer::init(); return true;};
+//    //step 2
+    void onEnter() {LOG_INFO("onEnter");CCLayer::onEnter();};
+//    //step 3
+    void onEnterTransitionDidFinish(){LOG_INFO("onEnterTransitionDidFinish");CCLayer::onEnterTransitionDidFinish();};
+//    
+    void onExit() {LOG_INFO("onExit");CCLayer::onExit();};
     
     void onRequestFinished(CCHttpClient* client, CCHttpResponse* response);
     void onButtonClicked(CCObject *pSender, CCControlEvent pCCControlEvent);

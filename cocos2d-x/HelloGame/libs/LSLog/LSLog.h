@@ -58,7 +58,7 @@ private:
 	static void printAndroidLog(const char* methodName, const char* log);
 };
 
-#define LOG_INFO(fmt,...) LSLog::info("File(%s),Line(%d),%s", __FILE__, __LINE__, CCString::createWithFormat(fmt, ##__VA_ARGS__)->getCString());
+#define LOG_INFO(fmt,...) LSLog::info("File(%s),Line(%d),%s", __FILE__, __LINE__, cocos2d::CCString::createWithFormat(fmt, ##__VA_ARGS__)->getCString());
 
 #endif /* LSLOG_H_ */
 

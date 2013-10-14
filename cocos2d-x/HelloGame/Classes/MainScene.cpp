@@ -54,7 +54,8 @@ void MainScene::onRequestFinished(CCHttpClient* client, CCHttpResponse* response
 
 void MainScene::onButtonClicked(CCObject *pSender, CCControlEvent pCCControlEvent)
 {
-    this->mLabelText->setString("Button Clicked");
+    LOG_INFO("clicked!");
+    CCDirector::sharedDirector()->replaceScene(HelloWorld::scene());
 }
 
 void MainScene::onMenuClicked(CCObject *pSender)
